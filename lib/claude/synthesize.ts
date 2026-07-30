@@ -8,12 +8,12 @@ export type WeekItem = {
   createdAt: string;
 };
 
-function systemPrompt(): string {
-  // Optional free-text description of the user (clients, channels, projects)
-  // so next actions can be organised around their real world.
-  const context = process.env.SYNTHESIS_CONTEXT?.trim();
+export function systemPrompt(customContext?: string | null): string {
+  // Standing context about the user: compiled instructions from /instructions
+  // when set, else the SYNTHESIS_CONTEXT env var.
+  const context = customContext?.trim() || process.env.SYNTHESIS_CONTEXT?.trim();
   return `You write the weekly synthesis for the user's personal "second brain" — a review of the thoughts they captured this week.${
-    context ? `\n\nAbout the user: ${context}` : ""
+    context ? `\n\nAbout the user (standing context and emphasis rules):\n${context}` : ""
   }
 
 Produce lightweight Markdown only: ## headings, - bullets, **bold**. Never tables, images, code fences, or nested lists.
@@ -32,7 +32,10 @@ Ground every observation in the actual entries. Be specific and brief; never pad
 }
 
 /** One Claude call turning the week's filed items into a markdown synthesis. */
-export async function synthesizeWeek(items: WeekItem[]): Promise<string> {
+export async function synthesizeWeek(
+  items: WeekItem[],
+  customContext?: string | null
+): Promise<string> {
   const client = new Anthropic();
   const model = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5";
 
@@ -61,7 +64,7 @@ export async function synthesizeWeek(items: WeekItem[]): Promise<string> {
   const response = await client.messages.create({
     model,
     max_tokens: 2048,
-    system: systemPrompt(),
+    system: systemPrompt(customContext),
     messages: [
       {
         role: "user",

@@ -24,6 +24,9 @@ export default function Nav() {
           <Link href="/ask" className="link-quiet">
             Ask
           </Link>
+          <Link href="/instructions" className="link-quiet">
+            Instructions
+          </Link>
         </div>
       </div>
     </nav>

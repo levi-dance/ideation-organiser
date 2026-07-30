@@ -5,6 +5,7 @@ import { createContainerPage } from "@/lib/notion/write";
 import { chunkBlocks, markdownToBlocks } from "@/lib/notion/markdown";
 import { synthesizeWeek, type WeekItem } from "@/lib/claude/synthesize";
 import { withRetry } from "@/lib/pipeline/ingest";
+import { activeInstructions } from "@/lib/pipeline/instructions";
 
 export const maxDuration = 60;
 
@@ -89,7 +90,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const markdown = await withRetry(() => synthesizeWeek(items));
+    const customContext = await activeInstructions(db, "synthesis");
+    const markdown = await withRetry(() => synthesizeWeek(items, customContext));
 
     const rootId = process.env.NOTION_ROOT_PAGE_ID;
     if (!rootId) throw new Error("NOTION_ROOT_PAGE_ID is not set");

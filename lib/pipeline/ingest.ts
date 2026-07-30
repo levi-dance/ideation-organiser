@@ -4,6 +4,7 @@ import { writeToDestination } from "@/lib/notion/write";
 import { stripMarkdown } from "@/lib/notion/markdown";
 import { notionUrl } from "@/lib/notion/client";
 import { embedFiledItems, type EmbedItem } from "@/lib/pipeline/embed";
+import { activeInstructions } from "@/lib/pipeline/instructions";
 import type { DestinationWithCategory } from "@/lib/types";
 
 export type IngestResult = {
@@ -84,11 +85,12 @@ export async function ingest(params: {
     const destinations = rows as unknown as DestinationWithCategory[];
     const catchAll = destinations.find((d) => d.category.slug === CATCH_ALL_SLUG) ?? null;
 
-    // 3. Classify.
+    // 3. Classify, honoring any compiled standing instructions.
     const result = await classifyEntry({
       transcript: params.transcript,
       destinations,
       catchAllDestinationId: catchAll?.id ?? null,
+      customInstructions: await activeInstructions(db, "personal"),
     });
 
     await db.from("classification_runs").insert({

@@ -74,7 +74,7 @@ function renderLists(
     .join("\n");
 }
 
-const SYSTEM_PROMPT = `You are the work-idea filing engine of a personal "second brain". The user captures raw work thoughts by voice or text and has already marked them as Work; you route each one to the right ClickUp list and decide whether it is a new idea or added detail on an existing task.
+export const WORK_SYSTEM_PROMPT = `You are the work-idea filing engine of a personal "second brain". The user captures raw work thoughts by voice or text and has already marked them as Work; you route each one to the right ClickUp list and decide whether it is a new idea or added detail on an existing task.
 
 Rules:
 - Choose ONE list per idea — the one whose purpose best fits. Do not force a fit: if no list is a confident match, set list_key to null and explain why in reason. It is always better to hold an idea for manual routing than to file it somewhere wrong.
@@ -86,6 +86,7 @@ export async function classifyWorkEntry(params: {
   transcript: string;
   lists: ResolvedWorkList[];
   tasksByList: Map<string, ClickUpTask[]>;
+  customInstructions?: string | null;
 }): Promise<{
   classification: WorkClassification;
   model: string;
@@ -106,7 +107,17 @@ export async function classifyWorkEntry(params: {
     model,
     max_tokens: 4096,
     system: [
-      { type: "text", text: SYSTEM_PROMPT },
+      { type: "text", text: WORK_SYSTEM_PROMPT },
+      // Owner's compiled standing instructions (see /instructions). Placed
+      // before the cached lists block so the whole prefix stays cacheable.
+      ...(params.customInstructions
+        ? [
+            {
+              type: "text" as const,
+              text: `Owner's standing instructions, compiled from their own words. When these conflict with a list description or a general rule above, the standing instructions win (the permission scope and hold-on-low-confidence rules always apply):\n\n${params.customInstructions}`,
+            },
+          ]
+        : []),
       // Task lists change slowly relative to capture bursts; cache the prefix.
       { type: "text", text: listsBlock, cache_control: { type: "ephemeral" } },
     ],

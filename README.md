@@ -12,6 +12,7 @@ A ramble like *"grab almond milk and dish soap, oh and an idea for the newslette
 - **ClickUp filing (Work, optional)** — work captures become tasks in your ClickUp lists, or append to an existing task when it's clearly the same piece of work. Low-confidence ideas are held for one-tap manual routing, never guessed.
 - **Entry log** — every capture recorded in Postgres first (nothing is ever lost), with undo and reassign per filing.
 - **Ask your brain** — semantic search over everything you've filed, answered by Claude with citations.
+- **AI instructions you write in plain language** — tell it about your people, projects, and preferences; Claude compiles your words into precise rules it follows on every capture, and shows you exactly what it saved.
 - **Weekly synthesis** — a Monday-morning Notion page: themes, connections between entries, suggested next actions.
 - **Development prompts** — promising-but-thin ideas get 1–3 orange nudge questions written under them in Notion.
 - **Notion is the source of truth** — restructure your workspace freely; `npm run sync` reconciles the app's taxonomy to match.
@@ -40,7 +41,7 @@ Fill in `.env.local` as you go through the steps below.
 ### 2. Supabase (database + auth)
 
 1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard).
-2. Open **SQL Editor** and run each file in `supabase/migrations/` **in order** (0001 → 0005). Paste the contents of each file and click Run. Migration 0004 enables the `vector` extension for semantic search.
+2. Open **SQL Editor** and run each file in `supabase/migrations/` **in order** (0001 → 0006). Paste the contents of each file and click Run. Migration 0004 enables the `vector` extension for semantic search.
 3. From **Settings → API**, copy into `.env.local`:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` `public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -85,6 +86,18 @@ npm run dev
 ```
 
 Open [localhost:3000](http://localhost:3000), sign in, and capture a thought. Check your Notion — it should appear within a few seconds, and the entry log (Entries tab) shows exactly what went where, with undo.
+
+### Teach the AI your world (Instructions page)
+
+The filing quality ceiling isn't the model — it's how much the model knows about your life. The **Instructions** tab is where you fix that, in plain language:
+
+1. Type what you want, the way you'd tell a person: *"Kate is my sister — anything about her is family, not client work. Podcast recommendations go to Books to Read. Keep titles short."*
+2. Hit **Compile & save**. Claude rewrites your wish into precise, literal rules the filing model follows on every capture — expanding nicknames into facts, turning vague wishes into concrete triggers, and pinning rules to your real destination names.
+3. It shows you exactly what it saved (and tells you if part of your wish couldn't be honored). Filing not quite right? Come back, refine your words, recompile.
+
+There are separate instruction sets for Personal filing, Work filing (when ClickUp is configured), and the Weekly synthesis. Your compiled rules override the built-in routing judgment when they conflict — but never the safety rules (manual Personal/Work choice, hold-don't-guess, the ClickUp permission scope, undo). The built-in prompts are viewable read-only on the same page, so there's no hidden behavior.
+
+Also worth knowing: each category's routing behavior comes from its **description** in the taxonomy — `npm run sync` writes these for new categories, and sharper descriptions mean sharper filing. Instructions are for cross-cutting rules and personal facts; descriptions are for what belongs in each destination.
 
 ### 8. Deploy to Vercel
 

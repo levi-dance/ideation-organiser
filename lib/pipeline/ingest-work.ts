@@ -15,6 +15,7 @@ import {
   type ClickUpTask,
 } from "@/lib/clickup/client";
 import { withRetry } from "@/lib/pipeline/ingest";
+import { activeInstructions } from "@/lib/pipeline/instructions";
 
 export type WorkIngestResult = {
   entryId: string;
@@ -79,11 +80,12 @@ export async function ingestWork(params: {
       })
     );
 
-    // 3. Classify.
+    // 3. Classify, honoring any compiled standing instructions.
     const result = await classifyWorkEntry({
       transcript: params.transcript,
       lists,
       tasksByList,
+      customInstructions: await activeInstructions(db, "work"),
     });
 
     await db.from("classification_runs").insert({

@@ -53,7 +53,7 @@ function renderTaxonomy(destinations: DestinationWithCategory[]): string {
     .join("\n");
 }
 
-const SYSTEM_PROMPT = `You are the filing engine of a personal "second brain". The user captures raw thoughts by voice or text; you route each one to the right destination(s) and clean it up for filing.
+export const SYSTEM_PROMPT = `You are the filing engine of a personal "second brain". The user captures raw thoughts by voice or text; you route each one to the right destination(s) and clean it up for filing.
 
 Rules:
 - Choose the most specific destination(s) that confidently fit. An entry can be filed to multiple destinations when it is genuinely relevant to each (e.g. a draft thought about family may belong in both the current draft and a family bank).
@@ -79,6 +79,7 @@ export async function classifyEntry(params: {
   transcript: string;
   destinations: DestinationWithCategory[];
   catchAllDestinationId: string | null;
+  customInstructions?: string | null;
 }): Promise<{
   classification: Classification;
   model: string;
@@ -99,6 +100,16 @@ export async function classifyEntry(params: {
     max_tokens: 4096,
     system: [
       { type: "text", text: SYSTEM_PROMPT },
+      // Owner's compiled standing instructions (see /instructions). Placed
+      // before the cached taxonomy block so the whole prefix stays cacheable.
+      ...(params.customInstructions
+        ? [
+            {
+              type: "text" as const,
+              text: `Owner's standing instructions, compiled from their own words. When these conflict with a category description or a general rule above, the standing instructions win:\n\n${params.customInstructions}`,
+            },
+          ]
+        : []),
       // Taxonomy changes rarely; cache it as part of the stable prefix.
       { type: "text", text: taxonomyBlock, cache_control: { type: "ephemeral" } },
     ],
