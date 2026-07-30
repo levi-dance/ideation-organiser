@@ -73,8 +73,8 @@ Create a key at [dash.voyageai.com](https://dash.voyageai.com) → `VOYAGE_API_K
 Skip this entirely if you don't use ClickUp; the Work toggle simply won't appear.
 
 1. ClickUp **Settings → Apps → API Token** → `CLICKUP_API_TOKEN`.
-2. `npm run clickup:discover` — prints every list in your workspace with its ID and statuses.
-3. Set `CLICKUP_LISTS` to a JSON array of the lists work ideas may be filed into (see the example in `.env.local.example`). Write each `description` as routing guidance — it's what the classifier reads to pick a list.
+2. `npm run clickup:discover` — prints every list in your workspace, then a ready-to-paste `CLICKUP_LISTS=[…]` line containing all of them.
+3. Copy that line into `.env.local`, delete any lists the Work pathway shouldn't file into, and replace each `TODO` description with routing guidance — the description is what the classifier reads to pick a list, so it's what makes work routing good.
 
 The app deliberately has a tiny ClickUp permission surface: create tasks in a list's first ("dump") status and append to task descriptions. It never sets priorities, assignees, or statuses — triage stays yours.
 
@@ -97,7 +97,9 @@ The filing quality ceiling isn't the model — it's how much the model knows abo
 
 Each instruction is its own item: add more any time, and edit or delete any one of them without touching the rest. Filing not quite right? Open the offending rule, refine your words, recompile.
 
-There are separate instruction sets for Personal filing, Work filing (when ClickUp is configured), and the Weekly synthesis. Your compiled rules override the built-in routing judgment when they conflict — but never the safety rules (manual Personal/Work choice, hold-don't-guess, the ClickUp permission scope, undo). The built-in prompts are viewable read-only on the same page, so there's no hidden behavior.
+There are separate instruction sets for Personal filing, Work filing (when ClickUp is configured), and the Weekly synthesis. The **Weekly synthesis** set is where you tell it who your clients, channels, and projects are — that context shapes the Monday review's suggested next actions. (It's the in-app equivalent of the optional `SYNTHESIS_CONTEXT` env var; use whichever you prefer — an instruction wins if both are set.) Each empty section shows a few tappable example prompts to start from.
+
+Your compiled rules override the built-in routing judgment when they conflict — but never the safety rules (manual Personal/Work choice, hold-don't-guess, the ClickUp permission scope, undo). The built-in prompts are viewable read-only on the same page, so there's no hidden behavior.
 
 Also worth knowing: each category's routing behavior comes from its **description** in the taxonomy — `npm run sync` writes these for new categories, and sharper descriptions mean sharper filing. Instructions are for cross-cutting rules and personal facts; descriptions are for what belongs in each destination.
 

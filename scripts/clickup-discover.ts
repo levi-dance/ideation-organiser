@@ -19,6 +19,9 @@ async function api<T>(path: string): Promise<T> {
 
 type List = { id: string; name: string; statuses?: { status: string; orderindex: number }[] };
 
+// Every list seen while walking, collected for the copy-paste CLICKUP_LISTS block.
+const discovered: { listId: string; name: string; description: string }[] = [];
+
 function printList(l: List, indent: string) {
   const statuses = (l.statuses ?? [])
     .sort((a, b) => a.orderindex - b.orderindex)
@@ -26,6 +29,11 @@ function printList(l: List, indent: string) {
     .join(" → ");
   console.log(`${indent}list: ${l.name}  (id: ${l.id})`);
   if (statuses) console.log(`${indent}  statuses: ${statuses}`);
+  discovered.push({
+    listId: l.id,
+    name: l.name,
+    description: "TODO: what belongs in this list",
+  });
 }
 
 async function main() {
@@ -50,12 +58,20 @@ async function main() {
       for (const list of folderless) printList(list, "    ");
     }
   }
+
+  if (!discovered.length) {
+    console.log("\nNo lists found. Make sure the API token can see your workspace.");
+    return;
+  }
+
   console.log(
-    "\nFill in .env.local with the lists the Work pathway may file into, e.g.:\n" +
-      `  CLICKUP_LISTS=[{"listId":"901234567","name":"Client Content",` +
-      `"description":"Content pipeline for this client: ideas, posts, production tasks."}]\n` +
-      "The description is routing guidance for the classifier — describe what belongs in the list."
+    "\n─────────────────────────────────────────────────────────────────────\n" +
+      "Copy this line into .env.local. Then: delete any lists the Work pathway\n" +
+      "should NOT file into, and replace each TODO with a real description —\n" +
+      "the description is routing guidance the classifier reads to pick a list,\n" +
+      "so it's what makes work routing good.\n"
   );
+  console.log(`CLICKUP_LISTS=${JSON.stringify(discovered)}`);
 }
 
 main().catch((e) => {

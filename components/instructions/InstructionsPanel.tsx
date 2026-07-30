@@ -16,6 +16,7 @@ type Props = {
   description: string;
   placeholder: string;
   initialItems: InstructionItem[];
+  starterHints?: string[];
 };
 
 function ItemCard({
@@ -189,6 +190,7 @@ export default function InstructionsPanel({
   description,
   placeholder,
   initialItems,
+  starterHints = [],
 }: Props) {
   const [items, setItems] = useState<InstructionItem[]>(initialItems);
   const [notesById, setNotesById] = useState<Record<string, string | null>>({});
@@ -255,6 +257,27 @@ export default function InstructionsPanel({
               }}
             />
           ))}
+        </div>
+      )}
+
+      {items.length === 0 && starterHints.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
+            Not sure where to start? Tap an example to try it:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {starterHints.map((hint, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setDraft(hint)}
+                className="rounded-full border px-3 py-1 text-left text-xs transition-colors hover:bg-nblue-100"
+                style={{ borderColor: "var(--color-hairline)", color: "var(--color-ink-muted)" }}
+              >
+                {hint}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

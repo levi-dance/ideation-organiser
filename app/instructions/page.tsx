@@ -71,6 +71,11 @@ export default async function InstructionsPage() {
           description="Each instruction is its own item — add as many as you like, edit or delete one without touching the others. Name real people and projects; the AI only knows what you tell it here."
           placeholder={'e.g. "Anything mentioning my sister Kate is family stuff, not client work."'}
           initialItems={itemsFor("personal")}
+          starterHints={[
+            "My clients are Acme and Globex — anything for them goes to their Project Notes, not my own channels, even if it mentions Instagram or YouTube",
+            "Book and podcast recommendations go to Books to Read",
+            "Keep titles under six words",
+          ]}
         />
 
         {workConfigured && (
@@ -80,15 +85,24 @@ export default async function InstructionsPage() {
             description="How work captures pick a list and when they should attach to an existing task."
             placeholder={'e.g. "Anything about the website redesign belongs in Ops even if it mentions content."'}
             initialItems={itemsFor("work")}
+            starterHints={[
+              "Anything about the website redesign belongs in Ops, even if it mentions content",
+              "Invoicing or pricing thoughts always go to Ops",
+            ]}
           />
         )}
 
         <InstructionsPanel
           scope="synthesis"
           title="Weekly synthesis"
-          description="Who and what your week revolves around, and what the Monday review should emphasize or skip."
+          description="Who and what your week revolves around, and what the Monday review should emphasize or skip. This is where you tell it who your clients, channels, and projects are."
           placeholder={'e.g. "Always suggest one concrete next step per client, and skip groceries entirely."'}
           initialItems={itemsFor("synthesis")}
+          starterHints={[
+            "My clients are Acme and Globex; I also run a newsletter and a YouTube channel",
+            "Always suggest one concrete next step per client, and skip groceries",
+            "Flag any client I've neglected this week",
+          ]}
         />
 
         <details className="card p-5 text-sm">
