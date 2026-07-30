@@ -49,18 +49,49 @@ export default async function InstructionsPage() {
     <>
       <Nav />
       <main className="mx-auto max-w-3xl px-6 space-y-6">
-        <header className="pt-10">
+        <header className="pt-10 space-y-3">
           <h1 className="text-3xl font-semibold tracking-tight">AI instructions</h1>
-          <p className="mt-1 text-sm" style={{ color: "var(--color-ink-muted)" }}>
-            Tell the AI about your world in your own words — people, projects, pet peeves. It
-            rewrites your wish into precise rules it will follow on every capture, and shows you
-            exactly what it saved.
+          <p className="text-sm" style={{ color: "var(--color-ink-muted)" }}>
+            You do not need any instructions. The tool already splits rambles into separate ideas,
+            files one thought to several places when it fits, cleans up speech-to-text, and routes
+            by your Notion category descriptions. With this page empty, it works exactly as it would
+            if this feature did not exist. Everything below is optional.
           </p>
+          <div className="card p-4 text-sm">
+            <p className="font-medium">Add an instruction only for something the tool cannot know or guess on its own:</p>
+            <ul className="mt-2 space-y-1.5" style={{ color: "var(--color-ink-muted)" }}>
+              <li>
+                <span className="font-medium" style={{ color: "var(--color-ink)" }}>
+                  1. A fact about your world.
+                </span>{" "}
+                Who a person or project is, and where thoughts about it belong. Example: &ldquo;Kate
+                is my sister; anything about her is family, not client work.&rdquo;
+              </li>
+              <li>
+                <span className="font-medium" style={{ color: "var(--color-ink)" }}>
+                  2. An override of where something normally lands.
+                </span>{" "}
+                When your brain works differently from the obvious. Example: &ldquo;Anything for the
+                camping trip goes to Gear, even if it sounds like groceries.&rdquo;
+              </li>
+              <li>
+                <span className="font-medium" style={{ color: "var(--color-ink)" }}>
+                  3. A style preference for how items are written.
+                </span>{" "}
+                Title length, tone, how much structure. Example: &ldquo;Keep titles under six
+                words.&rdquo;
+              </li>
+            </ul>
+            <p className="mt-2" style={{ color: "var(--color-ink-muted)" }}>
+              You do not need instructions for things it already does well: splitting, multi-filing,
+              cleaning up, or basic routing. If filing is fine, add nothing.
+            </p>
+          </div>
         </header>
 
         {tableMissing && (
           <p className="card border-amber-300 bg-amber-50 p-3 text-sm text-amber-700">
-            The ai_instructions table doesn&rsquo;t exist yet — run supabase/schema.sql in the
+            The ai_instructions table doesn&rsquo;t exist yet. Run supabase/schema.sql in the
             Supabase SQL Editor, then reload.
           </p>
         )}
@@ -68,11 +99,11 @@ export default async function InstructionsPage() {
         <InstructionsPanel
           scope="personal"
           title="Personal filing (Notion)"
-          description="Each instruction is its own item — add as many as you like, edit or delete one without touching the others. Name real people and projects; the AI only knows what you tell it here."
+          description="Each instruction is its own item: add as many as you like, edit or delete one without touching the others. Name real people and projects; the AI only knows what you tell it here."
           placeholder={'e.g. "Anything mentioning my sister Kate is family stuff, not client work."'}
           initialItems={itemsFor("personal")}
           starterHints={[
-            "My clients are Acme and Globex — anything for them goes to their Project Notes, not my own channels, even if it mentions Instagram or YouTube",
+            "My clients are Acme and Globex; anything for them goes to their Project Notes, not my own channels, even if it mentions Instagram or YouTube",
             "Book and podcast recommendations go to Books to Read",
             "Keep titles under six words",
           ]}

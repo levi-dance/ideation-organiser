@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     if (!rows.length) {
       return NextResponse.json({
         answer:
-          "Nothing filed in the second brain matches that yet — either it hasn't been captured, or embeddings haven't been backfilled.",
+          "Nothing filed in the second brain matches that yet - either it hasn't been captured, or embeddings haven't been backfilled.",
         sources: [],
       });
     }

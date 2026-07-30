@@ -9,7 +9,7 @@ export const WORK_PROMPT_VERSION = "work-v1";
 /**
  * Confidence gates. Deliberately conservative:
  * - Below LIST_CONFIDENCE_MIN the idea is HELD for manual routing, not filed.
- * - Appending to an existing task requires a very high match — a wrong append
+ * - Appending to an existing task requires a very high match - a wrong append
  *   pollutes a real task, while a duplicate new task is cheap to merge later.
  */
 export const LIST_CONFIDENCE_MIN = 0.6;
@@ -41,7 +41,7 @@ const WorkClassificationSchema = z.object({
         formatted_body: z
           .string()
           .describe(
-            "Cleaned-up body preserving the full idea. Fix speech-to-text artifacts. Empty string if the title alone captures it. Plain prose unless the thought genuinely has structure; then lightweight Markdown (- bullets, **bold**). Never tables, images, or code fences."
+            "Cleaned-up body preserving the full idea. Fix speech-to-text artifacts. Empty string if the title alone captures it. Plain prose unless the thought genuinely has structure; then lightweight Markdown (- bullets, **bold**). Never tables, images, or code fences. Never use em dashes; use commas, colons, or separate sentences."
           ),
         reason: z
           .string()
@@ -77,10 +77,11 @@ function renderLists(
 export const WORK_SYSTEM_PROMPT = `You are the work-idea filing engine of a personal "second brain". The user captures raw work thoughts by voice or text and has already marked them as Work; you route each one to the right ClickUp list and decide whether it is a new idea or added detail on an existing task.
 
 Rules:
-- Choose ONE list per idea — the one whose purpose best fits. Do not force a fit: if no list is a confident match, set list_key to null and explain why in reason. It is always better to hold an idea for manual routing than to file it somewhere wrong.
+- Choose ONE list per idea: the one whose purpose best fits. Do not force a fit: if no list is a confident match, set list_key to null and explain why in reason. It is always better to hold an idea for manual routing than to file it somewhere wrong.
 - Your job is filing, NOT triage: never prioritize, categorize, or editorialize. Clean up speech-to-text artifacts and filler words, but NEVER lose or alter the substance of the idea.
-- Append vs. create: scan the list's open tasks. If the idea clearly adds detail to an existing task (a new thought on a reel idea that is already a task, for example), set matched_task_id with an honest match_confidence. Matching means the SAME piece of work — not merely the same topic or platform. When in doubt, it is a new task; duplicates are cheap, wrong appends are not.
-- A capture may contain several distinct work ideas — emit one element per idea. Do not fragment a single coherent thought; supporting details belong in the body of the idea they support.`;
+- Append vs. create: scan the list's open tasks. If the idea clearly adds detail to an existing task (a new thought on a reel idea that is already a task, for example), set matched_task_id with an honest match_confidence. Matching means the SAME piece of work, not merely the same topic or platform. When in doubt, it is a new task; duplicates are cheap, wrong appends are not.
+- A capture may contain several distinct work ideas; emit one element per idea. Do not fragment a single coherent thought; supporting details belong in the body of the idea they support.
+- Never use em dashes in titles or bodies. Use commas, colons, or separate sentences.`;
 
 export async function classifyWorkEntry(params: {
   transcript: string;

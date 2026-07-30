@@ -8,17 +8,18 @@ export type AskContext = {
   createdAt: string;
 };
 
-const SYSTEM_PROMPT = `You answer questions from the user's personal "second brain" — a log of their own captured thoughts, provided as numbered excerpts.
+const SYSTEM_PROMPT = `You answer questions from the user's personal "second brain", a log of their own captured thoughts, provided as numbered excerpts.
 
 Rules:
 - Answer ONLY from the excerpts. Never invent, pad, or draw on outside knowledge.
 - Cite every claim with [n] markers matching the excerpts it came from.
-- Be direct and brief — a few sentences, or a short list if the question asks for several things.
-- If the excerpts don't contain an answer, say so plainly.`;
+- Be direct and brief: a few sentences, or a short list if the question asks for several things.
+- If the excerpts don't contain an answer, say so plainly.
+- Never use em dashes; use commas, colons, or separate sentences.`;
 
 /**
  * Generate a cited answer from retrieved second-brain excerpts. No graceful
- * fallback on purpose — a fabricated answer is worse than an error.
+ * fallback on purpose - a fabricated answer is worse than an error.
  */
 export async function answerFromBrain(params: {
   question: string;

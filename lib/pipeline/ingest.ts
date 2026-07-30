@@ -2,6 +2,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { classifyEntry, PROMPT_VERSION } from "@/lib/claude/classify";
 import { writeToDestination } from "@/lib/notion/write";
 import { stripMarkdown } from "@/lib/notion/markdown";
+import { formatSnippet } from "@/lib/pipeline/snippet";
 import { notionUrl } from "@/lib/notion/client";
 import { embedFiledItems, type EmbedItem } from "@/lib/pipeline/embed";
 import { activeInstructions } from "@/lib/pipeline/instructions";
@@ -79,7 +80,7 @@ export async function ingest(params: {
       .eq("is_active", true);
     if (taxError || !rows?.length) {
       return await fail(
-        taxError?.message ?? "No destinations found — run `npm run seed` first."
+        taxError?.message ?? "No destinations found - run `npm run seed` first."
       );
     }
     const destinations = rows as unknown as DestinationWithCategory[];
@@ -145,9 +146,10 @@ export async function ingest(params: {
             action_type: dest.kind === "bank_database" ? "append_row" : "append_block",
             notion_page_id: write.notionPageId,
             notion_block_ids: write.notionBlockIds,
-            content_snippet: `${target.formatted_title}${
-              target.formatted_body ? ` — ${stripMarkdown(target.formatted_body)}` : ""
-            }`,
+            content_snippet: formatSnippet(
+              target.formatted_title,
+              stripMarkdown(target.formatted_body)
+            ),
             development_prompts: prompts.length ? prompts : null,
             warning: write.warning,
           })
@@ -155,9 +157,9 @@ export async function ingest(params: {
           .single();
         if (fdError || !fdRow) {
           // The Notion write succeeded, so a retry job would duplicate it.
-          // Surface loudly instead — the page exists but isn't in the log.
+          // Surface loudly instead - the page exists but isn't in the log.
           errors.push(
-            `${dest.title}: filed to Notion but entry-log insert failed — ${
+            `${dest.title}: filed to Notion but entry-log insert failed - ${
               fdError?.message ?? "no row returned"
             }`
           );
@@ -196,7 +198,7 @@ export async function ingest(params: {
     }
 
     // 4.5. Embed filed items for semantic search. Never blocks or fails the
-    // filing — on error the batch goes to the retry queue instead.
+    // filing - on error the batch goes to the retry queue instead.
     if (embedItems.length) {
       try {
         await embedFiledItems(db, embedItems);

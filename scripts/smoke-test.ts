@@ -91,7 +91,7 @@ async function main() {
   }
 
   await db.from("entries").update({ status: "filed" }).eq("id", entry.id);
-  console.log("done — entry status: filed");
+  console.log("done - entry status: filed");
 }
 
 main().catch((e) => {

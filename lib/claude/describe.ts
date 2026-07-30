@@ -9,7 +9,7 @@ const DescriptionsSchema = z.object({
       description: z
         .string()
         .describe(
-          "One or two sentences telling a classifier what belongs in this category — concrete and discriminating, not generic"
+          "One or two sentences telling a classifier what belongs in this category: concrete and discriminating, not generic. No em dashes."
         ),
     })
   ),
@@ -17,7 +17,7 @@ const DescriptionsSchema = z.object({
 
 /**
  * Write concise routing descriptions for newly discovered categories.
- * Falls back to a template if the call fails — sync must not break on this.
+ * Falls back to a template if the call fails - sync must not break on this.
  */
 export async function describeCategories(
   categories: { id: string; name: string; parentName: string | null }[]
@@ -34,7 +34,7 @@ export async function describeCategories(
       model: process.env.ANTHROPIC_MODEL || "claude-haiku-4-5",
       max_tokens: 2048,
       system:
-        "You write routing descriptions for a personal note-filing system. For each category, write 1–2 sentences that help a classifier decide what belongs there (and, when useful, what does NOT). Be concrete.",
+        "You write routing descriptions for a personal note-filing system. For each category, write 1 to 2 sentences that help a classifier decide what belongs there (and, when useful, what does NOT). Be concrete. Never use em dashes.",
       messages: [
         {
           role: "user",

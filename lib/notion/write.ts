@@ -82,7 +82,7 @@ const MAX_PROMPT_LENGTH = 1998; // leave room for the parentheses within Notion'
  * File formatted content into a destination. `body` may be lightweight Markdown;
  * structured bodies become real Notion blocks.
  * - bank_database: create a row (page) in the database's data source.
- *   (`notion_database_id` stores the DATA SOURCE id — Notion API 2025-09 model.)
+ *   (`notion_database_id` stores the DATA SOURCE id - Notion API 2025-09 model.)
  *   The Note property keeps a short plain-text summary so table views stay scannable;
  *   structured or long bodies land in the row's page body as blocks.
  * - document_section: append blocks after the configured section heading.
@@ -156,7 +156,7 @@ export async function writeToDestination(
     if (anchor) {
       after = anchor;
     } else {
-      warning = `Heading "${dest.notion_section_heading}" not found — appended at end of page`;
+      warning = `Heading "${dest.notion_section_heading}" not found - appended at end of page`;
     }
   }
 
@@ -171,7 +171,7 @@ export async function writeToDestination(
     children.push(...markdownToBlocks(body));
   } else {
     const richText: RichText[] = [boldTitle];
-    if (body) richText.push(...markdownToRichText(` — ${body}`));
+    if (body) richText.push(...markdownToRichText(`: ${body}`));
     children.push({ paragraph: { rich_text: richText } });
   }
   children.push(...promptBlocks(developmentPrompts));

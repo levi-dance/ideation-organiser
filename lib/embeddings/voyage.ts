@@ -1,5 +1,5 @@
 /**
- * Voyage AI embeddings client — plain fetch, one endpoint, no SDK needed.
+ * Voyage AI embeddings client - plain fetch, one endpoint, no SDK needed.
  * https://docs.voyageai.com/reference/embeddings-api
  */
 
@@ -7,7 +7,7 @@ const VOYAGE_URL = "https://api.voyageai.com/v1/embeddings";
 
 export const EMBEDDING_MODEL = process.env.VOYAGE_MODEL || "voyage-3.5-lite";
 
-/** Must match the vector(N) column in entry_embeddings — changing it means re-backfilling. */
+/** Must match the vector(N) column in entry_embeddings - changing it means re-backfilling. */
 export const EMBEDDING_DIM = 1024;
 
 export async function embedTexts(

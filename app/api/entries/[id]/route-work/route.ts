@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { workLists } from "@/lib/clickup/lists";
+import { formatSnippet } from "@/lib/pipeline/snippet";
 import { createTask, dumpStatus, getList } from "@/lib/clickup/client";
 import { withRetry } from "@/lib/pipeline/ingest";
 import type { WorkRoutingQueueItem } from "@/lib/types";
@@ -9,7 +10,7 @@ export const maxDuration = 60;
 
 /**
  * Manually route a held Work idea into a ClickUp list. This is the resolution
- * path for work_routing_queue items — the owner picks the list, the system
+ * path for work_routing_queue items - the owner picks the list, the system
  * files the task (same permission scope as ingest: create in dump status only).
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -65,7 +66,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       action_type: "create_task",
       task_id: res.taskId,
       task_name: item.title,
-      content_snippet: `${item.title}${item.body ? ` — ${item.body}` : ""}`,
+      content_snippet: formatSnippet(item.title, item.body),
     });
     await db.from("work_routing_queue").update({ status: "routed" }).eq("id", item.id);
 

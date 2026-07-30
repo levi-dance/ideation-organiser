@@ -2,13 +2,13 @@
  * One-time seed: creates a starter Notion structure under NOTION_ROOT_PAGE_ID
  * and mirrors it into the Postgres taxonomy (categories + destinations).
  *
- * The taxonomy below is an EXAMPLE — edit the names, clients, and banks to
+ * The taxonomy below is an EXAMPLE - edit the names, clients, and banks to
  * match your life before running. Only the catch-all's slug ("general-notes")
  * must stay: lib/pipeline/ingest.ts uses it as CATCH_ALL_SLUG. After seeding,
- * Notion is the source of truth — restructure there and run `npm run sync`.
+ * Notion is the source of truth - restructure there and run `npm run sync`.
  *
  * Run: npm run seed
- * Safe to re-run only on an empty database — it does not dedupe.
+ * Safe to re-run only on an empty database - it does not dedupe.
  */
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
@@ -25,7 +25,7 @@ const required = [
 ];
 for (const key of required) {
   if (!process.env[key]) {
-    console.error(`Missing env var ${key} — copy .env.local.example to .env.local and fill it in.`);
+    console.error(`Missing env var ${key} - copy .env.local.example to .env.local and fill it in.`);
     process.exit(1);
   }
 }
@@ -122,7 +122,7 @@ async function docDestination(params: {
 async function main() {
   const { count } = await db.from("categories").select("*", { count: "exact", head: true });
   if (count && count > 0) {
-    console.error(`Database already has ${count} categories — seed aborted (it does not dedupe).`);
+    console.error(`Database already has ${count} categories - seed aborted (it does not dedupe).`);
     process.exit(1);
   }
 
@@ -134,7 +134,7 @@ async function main() {
     slug: "clients",
     name: "Clients",
     description:
-      "Client work. Anything for a specific client — ideas, notes, meeting takeaways — belongs under that client, NOT under personal content ideas, even if it mentions a platform like Instagram or YouTube.",
+      "Client work. Anything for a specific client - ideas, notes, meeting takeaways - belongs under that client, NOT under personal content ideas, even if it mentions a platform like Instagram or YouTube.",
   });
 
   for (const clientName of ["Acme Co", "Globex"]) {
@@ -149,19 +149,19 @@ async function main() {
     const notesDb = await createBank(clientPage, "Project Notes");
     await bankDestination({
       categoryId: clientCat,
-      title: `${clientName} — Project Notes`,
+      title: `${clientName}: Project Notes`,
       notionDatabaseId: notesDb,
     });
     const meetingsDb = await createBank(clientPage, "Meeting Log");
     await bankDestination({
       categoryId: clientCat,
-      title: `${clientName} — Meeting Log`,
+      title: `${clientName}: Meeting Log`,
       notionDatabaseId: meetingsDb,
     });
     console.log(`  ✓ Client: ${clientName}`);
   }
 
-  // Writing — a long-form project with an idea bank and a live draft.
+  // Writing - a long-form project with an idea bank and a live draft.
   const writingPage = await createPage(ROOT, "Writing");
   const writingCat = await category({
     slug: "writing",
@@ -189,7 +189,7 @@ async function main() {
     slug: "books-to-read",
     name: "Books to Read",
     description:
-      "Books, articles, and podcasts to check out — recommendations with who mentioned them and why.",
+      "Books, articles, and podcasts to check out - recommendations with who mentioned them and why.",
   });
   const booksDb = await createBank(ROOT, "Books to Read");
   await bankDestination({
@@ -205,7 +205,7 @@ async function main() {
     slug: "gear-wishlist",
     name: "Gear / Wishlist",
     description:
-      "Gear and equipment I want to buy — cameras, audio, tech, tools — with why I want it.",
+      "Gear and equipment I want to buy - cameras, audio, tech, tools - with why I want it.",
   });
   const gearDb = await createBank(ROOT, "Gear / Wishlist");
   await bankDestination({
@@ -221,7 +221,7 @@ async function main() {
     slug: "groceries",
     name: "Groceries",
     description:
-      "Grocery and shopping list items. Entries are often several items in one capture — file each item separately.",
+      "Grocery and shopping list items. Entries are often several items in one capture - file each item separately.",
   });
   const groceriesDb = await createBank(ROOT, "Groceries");
   await bankDestination({
@@ -248,11 +248,11 @@ async function main() {
   for (const [slug, name, description] of channels) {
     const cat = await category({ slug, name, description, parentId: contentCat });
     const dbId = await createBank(contentPage, name);
-    await bankDestination({ categoryId: cat, title: `Content Ideas — ${name}`, notionDatabaseId: dbId });
+    await bankDestination({ categoryId: cat, title: `Content Ideas: ${name}`, notionDatabaseId: dbId });
   }
   console.log("  ✓ Content Ideas (Instagram/TikTok, YouTube, Newsletter)");
 
-  // General Learnings / Notes — catch-all. Slug must match CATCH_ALL_SLUG in lib/pipeline/ingest.ts.
+  // General Learnings / Notes - catch-all. Slug must match CATCH_ALL_SLUG in lib/pipeline/ingest.ts.
   const generalCat = await category({
     slug: "general-notes",
     name: "General Learnings / Notes",
@@ -267,7 +267,7 @@ async function main() {
   });
   console.log("  ✓ General Learnings / Notes (catch-all)");
 
-  console.log("\nDone. The taxonomy is live — start capturing.");
+  console.log("\nDone. The taxonomy is live - start capturing.");
 }
 
 main().catch((e) => {

@@ -47,7 +47,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       existingRules: await existingRulesFor(scope, id),
     });
     if (!result.compiled.trim()) {
-      // Nothing actionable — keep the existing saved version.
+      // Nothing actionable - keep the existing saved version.
       return NextResponse.json({ compiled: "", label: "", notes: result.notes });
     }
 

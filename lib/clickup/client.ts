@@ -1,7 +1,7 @@
 /**
  * ClickUp REST client for the Work pathway.
  *
- * PERMISSION SCOPE — deliberate hard limit while trust is being built.
+ * PERMISSION SCOPE - deliberate hard limit while trust is being built.
  * This module is the ONLY place that talks to the ClickUp API, and it exposes
  * exactly three capabilities:
  *   1. Read lists and their open tasks (to route and to match append targets).
@@ -69,7 +69,7 @@ export async function getList(listId: string): Promise<ClickUpList> {
   return { id: raw.id, name: raw.name, statuses: raw.statuses ?? [] };
 }
 
-/** The list's first status by orderindex — where new tasks are dumped. */
+/** The list's first status by orderindex - where new tasks are dumped. */
 export function dumpStatus(list: ClickUpList): string | null {
   if (!list.statuses.length) return null;
   return [...list.statuses].sort((a, b) => a.orderindex - b.orderindex)[0].status;
@@ -107,7 +107,7 @@ export async function getListTasks(listId: string): Promise<ClickUpTask[]> {
 
 /**
  * Create a task in the list's dump status. Only name, description, and status
- * are set — no priority, assignees, tags, or custom fields; triage is the owner's.
+ * are set - no priority, assignees, tags, or custom fields; triage is the owner's.
  */
 export async function createTask(params: {
   listId: string;

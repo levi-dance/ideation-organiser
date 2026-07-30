@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { writeToDestination } from "@/lib/notion/write";
 import { stripMarkdown } from "@/lib/notion/markdown";
+import { formatSnippet } from "@/lib/pipeline/snippet";
 import { embedFiledItems, type EmbedItem } from "@/lib/pipeline/embed";
 import {
   appendToTaskDescription,
@@ -72,14 +73,14 @@ export async function GET(request: Request) {
           action_type: dest.kind === "bank_database" ? "append_row" : "append_block",
           notion_page_id: write.notionPageId,
           notion_block_ids: write.notionBlockIds,
-          content_snippet: `${payload.title}${payload.body ? ` — ${stripMarkdown(payload.body)}` : ""}`,
+          content_snippet: formatSnippet(payload.title, stripMarkdown(payload.body)),
           development_prompts: prompts.length ? prompts : null,
           warning: write.warning,
         })
         .select("id")
         .single();
       if (fdError) {
-        // The Notion write succeeded — re-queuing would duplicate it. Fail the
+        // The Notion write succeeded - re-queuing would duplicate it. Fail the
         // job with a clear message instead.
         await db
           .from("job_queue")
@@ -188,7 +189,7 @@ export async function GET(request: Request) {
         action_type: p.action === "append_description" && p.task_id ? "append_description" : "create_task",
         task_id: taskId,
         task_name: taskName,
-        content_snippet: `${p.title}${p.body ? ` — ${p.body}` : ""}`,
+        content_snippet: formatSnippet(p.title, p.body),
       });
       await db.from("job_queue").update({ status: "done" }).eq("id", job.id);
 

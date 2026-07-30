@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-/** Cookie-session client — use for auth checks in server components/routes. */
+/** Cookie-session client - use for auth checks in server components/routes. */
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
   return createServerClient(
@@ -19,7 +19,7 @@ export async function createSupabaseServerClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Called from a Server Component — middleware refreshes sessions.
+            // Called from a Server Component - middleware refreshes sessions.
           }
         },
       },
@@ -27,7 +27,7 @@ export async function createSupabaseServerClient() {
   );
 }
 
-/** Service-role client — bypasses RLS. Server-side only, never import in client code. */
+/** Service-role client - bypasses RLS. Server-side only, never import in client code. */
 export function createSupabaseAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

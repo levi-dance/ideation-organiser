@@ -3,7 +3,7 @@
  *
  * The classifier is prompted to emit only this grammar: #/##/### headings,
  * "-" bullets, "1." numbered lists, "> " quotes, **bold**, *italic*, `code`,
- * [text](url). Anything else renders literally as a paragraph — never throws.
+ * [text](url). Anything else renders literally as a paragraph - never throws.
  * Nested lists flatten; tables/images/code fences are not supported.
  */
 
@@ -105,7 +105,7 @@ export function markdownToBlocks(md: string): NotionBlock[] {
   return blocks;
 }
 
-/** True if the text has real block structure or bold — i.e. earns a structured page body. */
+/** True if the text has real block structure or bold - i.e. earns a structured page body. */
 export function hasMarkdownStructure(text: string): boolean {
   return /^\s{0,3}(#{1,3}|[-*]|\d+[.)]|>)\s/m.test(text) || text.includes("**");
 }

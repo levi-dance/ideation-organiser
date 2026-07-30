@@ -29,7 +29,7 @@ export type Hue =
 export type CategoryStyle = {
   Icon: LucideIcon;
   hue: Hue;
-  /** CSS values for the hue — wash bg, soft border, accent + deep text. */
+  /** CSS values for the hue - wash bg, soft border, accent + deep text. */
   wash: string;
   soft: string;
   accent: string;

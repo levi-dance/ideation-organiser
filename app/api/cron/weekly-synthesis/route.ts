@@ -6,6 +6,7 @@ import { chunkBlocks, markdownToBlocks } from "@/lib/notion/markdown";
 import { synthesizeWeek, type WeekItem } from "@/lib/claude/synthesize";
 import { withRetry } from "@/lib/pipeline/ingest";
 import { activeInstructions } from "@/lib/pipeline/instructions";
+import { splitSnippet } from "@/lib/pipeline/snippet";
 
 export const maxDuration = 60;
 
@@ -23,7 +24,7 @@ type FiledRow = {
 
 /**
  * Find the "Weekly Synthesis" container directly under the root page, creating
- * it on first run. Found by title each run on purpose — a destinations row
+ * it on first run. Found by title each run on purpose - a destinations row
  * would surface it to the classifier as a filing target.
  */
 async function findOrCreateContainer(rootId: string): Promise<string> {
@@ -52,7 +53,7 @@ async function findOrCreateContainer(rootId: string): Promise<string> {
 }
 
 /**
- * Vercel Cron target (schedule in vercel.json is UTC — adjust it to land on
+ * Vercel Cron target (schedule in vercel.json is UTC - adjust it to land on
  * your local Monday morning). Reads the last 7 days of filed items and writes
  * a "Week of …" synthesis page into Notion.
  */
@@ -75,12 +76,12 @@ export async function GET(request: Request) {
   }
 
   const items: WeekItem[] = ((rows ?? []) as unknown as FiledRow[]).map((r) => {
-    const sep = r.content_snippet.indexOf(" — ");
+    const { title, body } = splitSnippet(r.content_snippet);
     return {
       categoryName: r.destination?.category?.name ?? "Uncategorised",
       destinationTitle: r.destination?.title ?? "",
-      title: sep === -1 ? r.content_snippet : r.content_snippet.slice(0, sep),
-      body: sep === -1 ? "" : r.content_snippet.slice(sep + 3),
+      title,
+      body,
       createdAt: r.created_at,
     };
   });

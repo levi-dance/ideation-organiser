@@ -15,7 +15,7 @@ function embedContent(item: EmbedItem): string {
 
 /**
  * Embed filed items and upsert into entry_embeddings. One batched Voyage call.
- * Idempotent (unique entry_destination_id + upsert) — safe for ingest, retry
+ * Idempotent (unique entry_destination_id + upsert) - safe for ingest, retry
  * cron, reassign, and backfill alike. Callers decide failure handling; this
  * must never block filing.
  */

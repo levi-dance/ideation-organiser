@@ -26,7 +26,7 @@ export default function SyncButton() {
       setMessage(
         changes.length
           ? `Synced ${r.scanned} Notion items:\n${changes.join("\n")}`
-          : `Synced ${r.scanned} Notion items — already up to date.`
+          : `Synced ${r.scanned} Notion items - already up to date.`
       );
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "sync failed");

@@ -1,7 +1,7 @@
 /**
  * Read-only discovery: walk the ClickUp workspace (teams → spaces → folders →
  * lists) and print every list with its id and statuses, so the real List IDs
- * can be confirmed and dropped into the CLICKUP_LISTS env var — never guessed.
+ * can be confirmed and dropped into the CLICKUP_LISTS env var - never guessed.
  * Run: npm run clickup:discover
  */
 const API = "https://api.clickup.com/api/v2";
@@ -67,7 +67,7 @@ async function main() {
   console.log(
     "\n─────────────────────────────────────────────────────────────────────\n" +
       "Copy this line into .env.local. Then: delete any lists the Work pathway\n" +
-      "should NOT file into, and replace each TODO with a real description —\n" +
+      "should NOT file into, and replace each TODO with a real description - \n" +
       "the description is routing guidance the classifier reads to pick a list,\n" +
       "so it's what makes work routing good.\n"
   );

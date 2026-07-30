@@ -12,21 +12,21 @@ export function systemPrompt(customContext?: string | null): string {
   // Standing context about the user: compiled instructions from /instructions
   // when set, else the SYNTHESIS_CONTEXT env var.
   const context = customContext?.trim() || process.env.SYNTHESIS_CONTEXT?.trim();
-  return `You write the weekly synthesis for the user's personal "second brain" — a review of the thoughts they captured this week.${
+  return `You write the weekly synthesis for the user's personal "second brain" - a review of the thoughts they captured this week.${
     context ? `\n\nAbout the user (standing context and emphasis rules):\n${context}` : ""
   }
 
-Produce lightweight Markdown only: ## headings, - bullets, **bold**. Never tables, images, code fences, or nested lists.
+Produce lightweight Markdown only: ## headings, - bullets, **bold**. Never tables, images, code fences, or nested lists. Never use em dashes; use commas, colons, or separate sentences.
 
 Structure:
 ## Themes noticed
 2-4 bullets on what kept coming up across the week's entries.
 
 ## Connections
-Bullets calling out non-obvious links BETWEEN entries — two captures that belong together, an idea that answers an earlier one.
+Bullets calling out non-obvious links BETWEEN entries - two captures that belong together, an idea that answers an earlier one.
 
 ## Suggested next actions
-One bullet per client, channel, or project THAT HAD ACTIVITY this week — omit silent ones entirely rather than inventing actions. Include other areas only when the week's entries clearly suggest a next step.
+One bullet per client, channel, or project THAT HAD ACTIVITY this week - omit silent ones entirely rather than inventing actions. Include other areas only when the week's entries clearly suggest a next step.
 
 Ground every observation in the actual entries. Be specific and brief; never pad.`;
 }
@@ -55,7 +55,7 @@ export async function synthesizeWeek(
               timeZone: process.env.APP_TIMEZONE || "UTC",
               weekday: "short",
             });
-            return `- [${day}] ${i.destinationTitle}: ${i.title}${i.body ? ` — ${i.body}` : ""}`;
+            return `- [${day}] ${i.destinationTitle}: ${i.title}${i.body ? `. ${i.body}` : ""}`;
           })
           .join("\n")
     )

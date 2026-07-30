@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { notion, notionUrl } from "@/lib/notion/client";
 import { writeToDestination } from "@/lib/notion/write";
 import { stripMarkdown } from "@/lib/notion/markdown";
+import { formatSnippet, splitSnippet } from "@/lib/pipeline/snippet";
 import { embedFiledItems } from "@/lib/pipeline/embed";
 import type { Classification } from "@/lib/claude/classify";
 import type { DestinationWithCategory, EntryDestination } from "@/lib/types";
@@ -30,7 +31,7 @@ export async function undoDestination(
 
   if (fd.action_type === "append_row") {
     if (!fd.notion_page_id) throw new Error("No Notion page recorded for this row");
-    // Trash, never hard-delete — recoverable from Notion's own trash.
+    // Trash, never hard-delete - recoverable from Notion's own trash.
     await notion().pages.update({ page_id: fd.notion_page_id, in_trash: true });
   } else if (fd.action_type === "append_block") {
     for (const blockId of fd.notion_block_ids ?? []) {
@@ -78,7 +79,7 @@ export async function reassignDestination(
     .eq("id", entryDestinationId)
     .single<EntryDestination>();
   if (!fd) throw new Error("Filed destination not found");
-  if (fd.undone_at) throw new Error("Already undone — file it again from a new capture");
+  if (fd.undone_at) throw new Error("Already undone - file it again from a new capture");
 
   const { data: target } = await db
     .from("destinations")
@@ -90,13 +91,7 @@ export async function reassignDestination(
 
   // Recover the formatted title/body from the classification run if we can;
   // fall back to splitting the stored snippet.
-  let title = fd.content_snippet;
-  let body = "";
-  const sep = fd.content_snippet.indexOf(" — ");
-  if (sep !== -1) {
-    title = fd.content_snippet.slice(0, sep);
-    body = fd.content_snippet.slice(sep + 3);
-  }
+  let { title, body } = splitSnippet(fd.content_snippet);
   const { data: run } = await db
     .from("classification_runs")
     .select("raw_response")
@@ -133,7 +128,7 @@ export async function reassignDestination(
       action_type: dest.kind === "bank_database" ? "append_row" : "append_block",
       notion_page_id: write.notionPageId,
       notion_block_ids: write.notionBlockIds,
-      content_snippet: `${title}${body ? ` — ${stripMarkdown(body)}` : ""}`,
+      content_snippet: formatSnippet(title, stripMarkdown(body)),
       development_prompts: prompts.length ? prompts : null,
       warning: write.warning,
     })
@@ -149,7 +144,7 @@ export async function reassignDestination(
 
   // Keep semantic search consistent after the move; the old row's embedding is
   // excluded at query time (its filing is now undone), so a failure here is
-  // cosmetic — swallow it.
+  // cosmetic - swallow it.
   if (created) {
     try {
       await embedFiledItems(db, [

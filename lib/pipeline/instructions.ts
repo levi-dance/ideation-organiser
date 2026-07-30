@@ -53,7 +53,7 @@ export async function existingRulesFor(
  * All active compiled instruction blocks for a pipeline, concatenated in
  * creation order (each block is bullet lines, so the join reads as one list),
  * or null when none. Soft-fails on any error (including the ai_instructions
- * table not existing yet) — custom instructions must never break filing.
+ * table not existing yet) - custom instructions must never break filing.
  */
 export async function activeInstructions(
   db: SupabaseClient,

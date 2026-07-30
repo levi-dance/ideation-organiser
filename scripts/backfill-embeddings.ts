@@ -1,11 +1,12 @@
 /**
  * One-time (re-runnable) backfill: embed every non-undone filed item that has
- * no embedding yet. Idempotent — the unique entry_destination_id + upsert make
+ * no embedding yet. Idempotent - the unique entry_destination_id + upsert make
  * repeat runs safe.
  * Run: npm run backfill:embeddings
  */
 import { createClient } from "@supabase/supabase-js";
 import { embedFiledItems, type EmbedItem } from "../lib/pipeline/embed";
+import { splitSnippet } from "../lib/pipeline/snippet";
 
 const BATCH_SIZE = 100;
 
@@ -16,7 +17,7 @@ async function main() {
     { auth: { persistSession: false } }
   );
 
-  // Page through both tables — supabase-js caps un-ranged selects at 1000 rows.
+  // Page through both tables - supabase-js caps un-ranged selects at 1000 rows.
   const PAGE = 1000;
   async function fetchAll<T>(
     query: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
@@ -51,19 +52,18 @@ async function main() {
   const pending: EmbedItem[] = (filedRows ?? [])
     .filter((r) => !done.has(r.id as string))
     .map((r) => {
-      // Same recovery heuristic reassign uses: snippet is "title — body".
-      const snippet = r.content_snippet as string;
-      const sep = snippet.indexOf(" — ");
+      // Same recovery heuristic reassign uses: split the stored snippet.
+      const { title, body } = splitSnippet(r.content_snippet as string);
       return {
         entryId: r.entry_id as string,
         entryDestinationId: r.id as string,
-        title: sep === -1 ? snippet : snippet.slice(0, sep),
-        body: sep === -1 ? "" : snippet.slice(sep + 3),
+        title,
+        body,
       };
     });
 
   if (!pending.length) {
-    console.log(`Nothing to backfill — ${done.size} item(s) already embedded.`);
+    console.log(`Nothing to backfill - ${done.size} item(s) already embedded.`);
     return;
   }
 

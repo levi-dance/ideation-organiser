@@ -153,7 +153,7 @@ export default function CaptureForm({ workEnabled = false }: { workEnabled?: boo
         />
       </div>
 
-      {/* Manual scope call — never inferred. Personal → Notion, Work → ClickUp.
+      {/* Manual scope call - never inferred. Personal → Notion, Work → ClickUp.
           Hidden entirely when the ClickUp pathway isn't configured. */}
       {workEnabled && (
       <div
@@ -211,7 +211,7 @@ export default function CaptureForm({ workEnabled = false }: { workEnabled?: boo
 
       {!speechSupported && (
         <p className="text-xs" style={{ color: "var(--color-ink-muted)" }}>
-          Voice input isn’t supported in this browser — typing works everywhere.
+          Voice input isn’t supported in this browser - typing works everywhere.
         </p>
       )}
 
@@ -237,7 +237,7 @@ export default function CaptureForm({ workEnabled = false }: { workEnabled?: boo
             </span>
             {result.lowConfidence && (
               <span className="ml-2 text-xs" style={{ color: "var(--color-ink-muted)" }}>
-                low confidence — landed in the catch-all
+                low confidence - landed in the catch-all
               </span>
             )}
           </p>
@@ -276,7 +276,7 @@ export default function CaptureForm({ workEnabled = false }: { workEnabled?: boo
               {(result.held ?? []).map((h, i) => (
                 <li key={i} className="text-amber-700">
                   Held for routing: <span className="font-medium">{h.title}</span>{" "}
-                  <span style={{ color: "var(--color-ink-muted)" }}>— {h.reason}</span>
+                  <span style={{ color: "var(--color-ink-muted)" }}> - {h.reason}</span>
                 </li>
               ))}
             </ul>

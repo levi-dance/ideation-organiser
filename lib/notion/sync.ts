@@ -7,7 +7,7 @@
  * - Every database (data source) => bank destination.
  * - Every plain page that contains other pages/databases => category (container).
  * - Every plain page with no children => document destination (e.g. a live draft).
- * - Pages that are ROWS of a database are content, not structure — ignored.
+ * - Pages that are ROWS of a database are content, not structure - ignored.
  * - Existing destinations keep their category and settings; only titles and
  *   active-state are updated. New nodes are created; vanished ones deactivated.
  * - New categories get a concise LLM-written routing description.
@@ -21,7 +21,7 @@ type Node = {
   object: "page" | "data_source";
   title: string;
   parentPageId: string | null; // null = root or workspace or unknown
-  databaseId: string | null; // the owning database, for data sources — used for Notion links
+  databaseId: string | null; // the owning database, for data sources - used for Notion links
 };
 
 // App-written output pages (and everything under them) are not taxonomy.
@@ -241,7 +241,7 @@ export async function runNotionSync(): Promise<SyncReport> {
         report.renamed.push(`destination: ${existing.title} → ${node.title}`);
       }
       // Banks store their owning database id in notion_page_id (used for
-      // "open in Notion" links) — backfill it for rows created before this.
+      // "open in Notion" links) - backfill it for rows created before this.
       if (node.object === "data_source" && node.databaseId && !existing.notion_page_id) {
         updates.notion_page_id = node.databaseId;
       }

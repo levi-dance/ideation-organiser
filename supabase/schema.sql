@@ -1,4 +1,4 @@
--- Second Brain — complete database schema.
+-- Second Brain - complete database schema.
 -- New install: paste this whole file into the Supabase SQL Editor and run once.
 -- (This is the consolidated form of what were migrations 0001–0007.)
 
@@ -113,7 +113,7 @@ create table job_queue (
 
 -- ── Semantic search ("ask your brain") ──────────────────────────────────────
 
--- One embedding per filed item — the cleaned title+body is the semantic unit,
+-- One embedding per filed item - the cleaned title+body is the semantic unit,
 -- and each maps 1:1 to a citation (entry link + Notion link).
 create table entry_embeddings (
   id uuid primary key default gen_random_uuid(),

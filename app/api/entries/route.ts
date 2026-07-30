@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const transcript = typeof body?.transcript === "string" ? body.transcript.trim() : "";
   const source = body?.source === "voice" ? "voice" : "text";
   const edited = Boolean(body?.edited);
-  // Scope is the owner's manual call, never inferred — Work → ClickUp, Personal → Notion.
+  // Scope is the owner's manual call, never inferred - Work → ClickUp, Personal → Notion.
   const scope = body?.scope === "work" ? "work" : "personal";
 
   if (!transcript) {

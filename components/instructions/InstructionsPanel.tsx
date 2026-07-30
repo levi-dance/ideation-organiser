@@ -49,7 +49,7 @@ function ItemCard({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
       if (!data.compiled) {
-        setError(data.notes || "Nothing actionable in that wording — kept the saved version.");
+        setError(data.notes || "Nothing actionable in that wording - kept the saved version.");
         return;
       }
       onSaved(
@@ -213,7 +213,7 @@ export default function InstructionsPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
       if (!data.compiled) {
-        setComposerNote(data.notes || "Nothing actionable found in that — try being more specific.");
+        setComposerNote(data.notes || "Nothing actionable found in that - try being more specific.");
         return;
       }
       const item: InstructionItem = {

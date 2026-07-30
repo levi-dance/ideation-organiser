@@ -16,6 +16,7 @@ import {
 } from "@/lib/clickup/client";
 import { withRetry } from "@/lib/pipeline/ingest";
 import { activeInstructions } from "@/lib/pipeline/instructions";
+import { formatSnippet } from "@/lib/pipeline/snippet";
 
 export type WorkIngestResult = {
   entryId: string;
@@ -71,7 +72,7 @@ export async function ingestWork(params: {
     // 2. Load the lists and their open tasks (routing context + append targets).
     const lists = workLists();
     if (!lists.length) {
-      return await fail("No ClickUp lists configured — set CLICKUP_LISTS (see README).");
+      return await fail("No ClickUp lists configured - set CLICKUP_LISTS (see README).");
     }
     const tasksByList = new Map<string, ClickUpTask[]>();
     await Promise.all(
@@ -144,9 +145,7 @@ export async function ingestWork(params: {
             action_type: "append_description",
             task_id: res.taskId,
             task_name: res.taskName,
-            content_snippet: `${idea.formatted_title}${
-              idea.formatted_body ? ` — ${idea.formatted_body}` : ""
-            }`,
+            content_snippet: formatSnippet(idea.formatted_title, idea.formatted_body),
           });
           filed.push({
             listName: list.name,
@@ -155,7 +154,7 @@ export async function ingestWork(params: {
             taskUrl: res.url,
           });
         } else {
-          // New tasks land in the list's first/dump status — filing, not triage.
+          // New tasks land in the list's first/dump status - filing, not triage.
           const listMeta = await withRetry(() => getList(list.listId));
           const res = await withRetry(() =>
             createTask({
@@ -172,9 +171,7 @@ export async function ingestWork(params: {
             action_type: "create_task",
             task_id: res.taskId,
             task_name: idea.formatted_title,
-            content_snippet: `${idea.formatted_title}${
-              idea.formatted_body ? ` — ${idea.formatted_body}` : ""
-            }`,
+            content_snippet: formatSnippet(idea.formatted_title, idea.formatted_body),
           });
           filed.push({
             listName: list.name,
