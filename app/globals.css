@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+/* Design tokens extracted from notion.com's live CSS bundles.
+   Light theme only, by design. */
+@theme {
+  --color-nblue-100: #f2f9ff;
+  --color-nblue-200: #e6f3fe;
+  --color-nblue-300: #93cdfe;
+  --color-nblue-400: #62aef0;
+  --color-nblue-500: #097fe8;
+  --color-nblue-600: #0075de;
+  --color-nblue-700: #005bab;
+  --color-nblue-900: #002a4f;
+
+  --color-ngray-100: #f9f9f8;
+  --color-ngray-200: #f6f5f4;
+  --color-ngray-300: #dfdcd9;
+  --color-ngray-400: #a39e98;
+  --color-ngray-500: #78736f;
+  --color-ngray-600: #615d59;
+  --color-ngray-700: #494744;
+  --color-ngray-900: #191918;
+
+  --color-ink: #191918;
+  --color-ink-muted: rgba(0, 0, 0, 0.54);
+  --color-ink-faint: rgba(0, 0, 0, 0.3);
+  --color-hairline: rgba(0, 0, 0, 0.1);
+
+  --shadow-notion-sm: 0px 0.7px 1.5px rgba(0, 0, 0, 0.015), 0px 3px 9px rgba(0, 0, 0, 0.03);
+  --shadow-notion-md: 0px 0.2px 1px rgba(0, 0, 0, 0.013), 0px 0.8px 2.9px rgba(0, 0, 0, 0.02),
+    0px 2px 7.8px rgba(0, 0, 0, 0.027), 0px 4px 18px rgba(0, 0, 0, 0.04);
+
+  /* Notion accent hues (100 = wash, 200 = soft, 500 = accent, 700 = deep) */
+  --color-nred-100: #fef3f1;
+  --color-nred-200: #fdd3cd;
+  --color-nred-500: #f64932;
+  --color-nred-700: #b01601;
+  --color-norange-100: #fff5ed;
+  --color-norange-200: #ffdec4;
+  --color-norange-500: #ff6d00;
+  --color-norange-700: #ab4a00;
+  --color-nyellow-100: #fff5e0;
+  --color-nyellow-200: #ffe4af;
+  --color-nyellow-500: #ffb110;
+  --color-nyellow-700: #c78600;
+  --color-ngreen-100: #f0faf2;
+  --color-ngreen-200: #d0f4d8;
+  --color-ngreen-500: #1aae39;
+  --color-ngreen-700: #0f6220;
+  --color-nteal-100: #f2fafa;
+  --color-nteal-200: #bde6e4;
+  --color-nteal-500: #27918d;
+  --color-nteal-700: #126764;
+  --color-npurple-100: #f8f5fc;
+  --color-npurple-200: #eadbfa;
+  --color-npurple-500: #9849e8;
+  --color-npurple-700: #562983;
+  --color-npink-100: #fff5fc;
+  --color-npink-200: #ffcdf1;
+  --color-npink-500: #ff64c8;
+  --color-npink-700: #9d2472;
+  --color-nbrown-100: #fcf8f5;
+  --color-nbrown-200: #ebd5c5;
+  --color-nbrown-500: #9c7054;
+  --color-nbrown-700: #744d2d;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+}
+
+@layer components {
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--color-nblue-500);
+    color: #ffffff;
+    font-weight: 500;
+    transition-property: background-color, color;
+    transition-duration: 150ms;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-nblue-400);
+  }
+  .btn-primary:active:not(:disabled) {
+    background-color: var(--color-nblue-700);
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+  }
+
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+    color: var(--color-nblue-600);
+    font-weight: 500;
+    border: 1px solid var(--color-hairline);
+    box-shadow: var(--shadow-notion-sm);
+    transition-property: background-color, color;
+    transition-duration: 150ms;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-ngray-100);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.4;
+  }
+
+  .card {
+    background: #ffffff;
+    border: 1px solid var(--color-hairline);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-notion-sm);
+  }
+
+  .input-notion {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid var(--color-hairline);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    color: var(--color-ink);
+    outline: none;
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+  .input-notion:focus {
+    border-color: var(--color-nblue-300);
+    box-shadow: 0 0 0 3px var(--color-nblue-200);
+  }
+  .input-notion::placeholder {
+    color: var(--color-ink-faint);
+  }
+
+  .link-quiet {
+    color: var(--color-ink-muted);
+    transition: color 150ms;
+  }
+  .link-quiet:hover {
+    color: var(--color-ink);
+  }
+
+  .link-blue {
+    color: var(--color-nblue-600);
+  }
+  .link-blue:hover {
+    color: var(--color-nblue-700);
+    text-decoration: underline;
+  }
+}
