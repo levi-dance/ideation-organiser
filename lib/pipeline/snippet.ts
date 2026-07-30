@@ -3,7 +3,7 @@
 // defined once here so the join and split can never drift.
 
 const SEP = ": ";
-const LEGACY_SEP = " — "; // older rows used an em dash; still recover them
+const LEGACY_SEP = " \u2014 "; // older rows used an em dash separator; still recover them
 
 /** Join a title and (already-cleaned) body into a content_snippet. */
 export function formatSnippet(title: string, body: string): string {
