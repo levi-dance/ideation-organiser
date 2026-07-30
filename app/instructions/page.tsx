@@ -1,6 +1,8 @@
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import InstructionsPanel from "@/components/instructions/InstructionsPanel";
+import InstructionsPanel, {
+  type InstructionItem,
+} from "@/components/instructions/InstructionsPanel";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { SYSTEM_PROMPT as PERSONAL_BASE_PROMPT } from "@/lib/claude/classify";
 import { WORK_SYSTEM_PROMPT } from "@/lib/claude/classify-work";
@@ -10,7 +12,9 @@ import { workLists } from "@/lib/clickup/lists";
 export const dynamic = "force-dynamic";
 
 type Row = {
+  id: string;
   scope: "personal" | "work" | "synthesis";
+  label: string | null;
   user_text: string;
   compiled_text: string;
   is_active: boolean;
@@ -22,23 +26,24 @@ export default async function InstructionsPage() {
   let tableMissing = false;
   const { data, error } = await db
     .from("ai_instructions")
-    .select("scope, user_text, compiled_text, is_active");
+    .select("id, scope, label, user_text, compiled_text, is_active")
+    .order("created_at");
   if (error) {
     tableMissing = true;
   } else {
     rows = (data ?? []) as Row[];
   }
-  const byScope = new Map(rows.map((r) => [r.scope, r]));
   const workConfigured = workLists().length > 0;
 
-  const panel = (scope: Row["scope"]) => {
-    const row = byScope.get(scope);
-    return {
-      initialText: row?.user_text ?? "",
-      initialCompiled: row?.compiled_text ?? "",
-      initialActive: row?.is_active ?? false,
-    };
-  };
+  const itemsFor = (scope: Row["scope"]): InstructionItem[] =>
+    rows
+      .filter((r) => r.scope === scope && r.is_active)
+      .map((r) => ({
+        id: r.id,
+        label: r.label ?? "Instruction",
+        userText: r.user_text,
+        compiled: r.compiled_text,
+      }));
 
   return (
     <>
@@ -55,19 +60,17 @@ export default async function InstructionsPage() {
 
         {tableMissing && (
           <p className="card border-amber-300 bg-amber-50 p-3 text-sm text-amber-700">
-            The ai_instructions table doesn&rsquo;t exist yet — apply
-            supabase/migrations/0006_ai_instructions.sql in the Supabase SQL Editor, then reload.
+            The ai_instructions table doesn&rsquo;t exist yet — apply migrations 0006 and 0007 from
+            supabase/migrations/ in the Supabase SQL Editor, then reload.
           </p>
         )}
 
         <InstructionsPanel
           scope="personal"
           title="Personal filing (Notion)"
-          description="How captures should be routed, split, titled, and formatted. Name real people and projects — the AI only knows what you tell it here."
-          placeholder={
-            'e.g. "Anything mentioning my sister Kate is family stuff, not client work. Recipe ideas go to Books to Read until I make a Recipes bank. Keep titles under six words."'
-          }
-          {...panel("personal")}
+          description="Each instruction is its own item — add as many as you like, edit or delete one without touching the others. Name real people and projects; the AI only knows what you tell it here."
+          placeholder={'e.g. "Anything mentioning my sister Kate is family stuff, not client work."'}
+          initialItems={itemsFor("personal")}
         />
 
         {workConfigured && (
@@ -75,10 +78,8 @@ export default async function InstructionsPage() {
             scope="work"
             title="Work filing (ClickUp)"
             description="How work captures pick a list and when they should attach to an existing task."
-            placeholder={
-              'e.g. "Anything about the website redesign belongs in Ops even if it mentions content. Invoicing or pricing thoughts always go to Ops."'
-            }
-            {...panel("work")}
+            placeholder={'e.g. "Anything about the website redesign belongs in Ops even if it mentions content."'}
+            initialItems={itemsFor("work")}
           />
         )}
 
@@ -86,10 +87,8 @@ export default async function InstructionsPage() {
           scope="synthesis"
           title="Weekly synthesis"
           description="Who and what your week revolves around, and what the Monday review should emphasize or skip."
-          placeholder={
-            'e.g. "My clients are Acme and Globex; I also run a newsletter. Always suggest one concrete next step per client, and skip groceries entirely."'
-          }
-          {...panel("synthesis")}
+          placeholder={'e.g. "Always suggest one concrete next step per client, and skip groceries entirely."'}
+          initialItems={itemsFor("synthesis")}
         />
 
         <details className="card p-5 text-sm">

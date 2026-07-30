@@ -41,7 +41,7 @@ Fill in `.env.local` as you go through the steps below.
 ### 2. Supabase (database + auth)
 
 1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard).
-2. Open **SQL Editor** and run each file in `supabase/migrations/` **in order** (0001 → 0006). Paste the contents of each file and click Run. Migration 0004 enables the `vector` extension for semantic search.
+2. Open **SQL Editor** and run each file in `supabase/migrations/` **in order** (0001 → 0007). Paste the contents of each file and click Run. Migration 0004 enables the `vector` extension for semantic search.
 3. From **Settings → API**, copy into `.env.local`:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` `public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -93,7 +93,9 @@ The filing quality ceiling isn't the model — it's how much the model knows abo
 
 1. Type what you want, the way you'd tell a person: *"Kate is my sister — anything about her is family, not client work. Podcast recommendations go to Books to Read. Keep titles short."*
 2. Hit **Compile & save**. Claude rewrites your wish into precise, literal rules the filing model follows on every capture — expanding nicknames into facts, turning vague wishes into concrete triggers, and pinning rules to your real destination names.
-3. It shows you exactly what it saved (and tells you if part of your wish couldn't be honored). Filing not quite right? Come back, refine your words, recompile.
+3. It shows you exactly what it saved (and tells you if part of your wish couldn't be honored, or if it clashes with one of your existing rules).
+
+Each instruction is its own item: add more any time, and edit or delete any one of them without touching the rest. Filing not quite right? Open the offending rule, refine your words, recompile.
 
 There are separate instruction sets for Personal filing, Work filing (when ClickUp is configured), and the Weekly synthesis. Your compiled rules override the built-in routing judgment when they conflict — but never the safety rules (manual Personal/Work choice, hold-don't-guess, the ClickUp permission scope, undo). The built-in prompts are viewable read-only on the same page, so there's no hidden behavior.
 
