@@ -60,8 +60,8 @@ export default async function InstructionsPage() {
 
         {tableMissing && (
           <p className="card border-amber-300 bg-amber-50 p-3 text-sm text-amber-700">
-            The ai_instructions table doesn&rsquo;t exist yet — apply migrations 0006 and 0007 from
-            supabase/migrations/ in the Supabase SQL Editor, then reload.
+            The ai_instructions table doesn&rsquo;t exist yet — run supabase/schema.sql in the
+            Supabase SQL Editor, then reload.
           </p>
         )}
 

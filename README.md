@@ -41,7 +41,7 @@ Fill in `.env.local` as you go through the steps below.
 ### 2. Supabase (database + auth)
 
 1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard).
-2. Open **SQL Editor** and run each file in `supabase/migrations/` **in order** (0001 → 0007). Paste the contents of each file and click Run. Migration 0004 enables the `vector` extension for semantic search.
+2. Open **SQL Editor**, paste the entire contents of `supabase/schema.sql`, and click Run. That's the whole database in one file (it enables the `vector` extension for semantic search along the way).
 3. From **Settings → API**, copy into `.env.local`:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon` `public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -146,7 +146,7 @@ Also worth knowing: each category's routing behavior comes from its **descriptio
 
 ## Troubleshooting
 
-- **"Could not find the '…' column … in the schema cache"** — a migration hasn't been applied. Apply any you skipped from `supabase/migrations/`, in order.
+- **"Could not find the '…' column … in the schema cache"** — the schema isn't fully applied. Re-run `supabase/schema.sql` in the SQL Editor (it's safe to run on a fresh database).
 - **"No destinations found — run `npm run seed` first."** — the taxonomy is empty: seed it, or build structure in Notion and `npm run sync`.
 - **Capture filed but search can't find it** — embeddings lagged (missing `VOYAGE_API_KEY` or a transient failure). Failed embeddings retry via the daily cron; `npm run backfill:embeddings` fixes it immediately.
 - **"Heading 'X' not found — appended at end of page"** — a document destination's configured section heading was renamed in Notion; the content still landed (end of page). Fix the heading or re-sync.
