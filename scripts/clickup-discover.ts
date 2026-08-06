@@ -1,77 +1,40 @@
 /**
- * Read-only discovery: walk the ClickUp workspace (teams → spaces → folders →
- * lists) and print every list with its id and statuses, so the real List IDs
- * can be confirmed and dropped into the CLICKUP_LISTS env var - never guessed.
+ * Read-only discovery: print every list the ClickUp token can see, with its id
+ * and statuses. The Settings page does this in-app with a clickable picker;
+ * this script stays for debugging a token or checking what the API returns.
  * Run: npm run clickup:discover
  */
-const API = "https://api.clickup.com/api/v2";
+import { discoverLists } from "../lib/clickup/discover";
 
-async function api<T>(path: string): Promise<T> {
-  const token = process.env.CLICKUP_API_TOKEN;
-  if (!token) {
+async function main() {
+  if (!process.env.CLICKUP_API_TOKEN) {
     console.error("CLICKUP_API_TOKEN is not set in .env.local");
     process.exit(1);
   }
-  const res = await fetch(`${API}${path}`, { headers: { Authorization: token } });
-  if (!res.ok) throw new Error(`GET ${path} → ${res.status} ${await res.text()}`);
-  return (await res.json()) as T;
-}
 
-type List = { id: string; name: string; statuses?: { status: string; orderindex: number }[] };
-
-// Every list seen while walking, collected for the copy-paste CLICKUP_LISTS block.
-const discovered: { listId: string; name: string; description: string }[] = [];
-
-function printList(l: List, indent: string) {
-  const statuses = (l.statuses ?? [])
-    .sort((a, b) => a.orderindex - b.orderindex)
-    .map((s) => s.status)
-    .join(" → ");
-  console.log(`${indent}list: ${l.name}  (id: ${l.id})`);
-  if (statuses) console.log(`${indent}  statuses: ${statuses}`);
-  discovered.push({
-    listId: l.id,
-    name: l.name,
-    description: "TODO: what belongs in this list",
-  });
-}
-
-async function main() {
-  const { teams } = await api<{ teams: { id: string; name: string }[] }>("/team");
-  for (const team of teams) {
-    console.log(`workspace: ${team.name} (id: ${team.id})`);
-    const { spaces } = await api<{ spaces: { id: string; name: string }[] }>(
-      `/team/${team.id}/space?archived=false`
-    );
-    for (const space of spaces) {
-      console.log(`  space: ${space.name} (id: ${space.id})`);
-      const [{ folders }, { lists: folderless }] = await Promise.all([
-        api<{ folders: { id: string; name: string; lists: List[] }[] }>(
-          `/space/${space.id}/folder?archived=false`
-        ),
-        api<{ lists: List[] }>(`/space/${space.id}/list?archived=false`),
-      ]);
-      for (const folder of folders) {
-        console.log(`    folder: ${folder.name} (id: ${folder.id})`);
-        for (const list of folder.lists) printList(list, "      ");
-      }
-      for (const list of folderless) printList(list, "    ");
-    }
+  const lists = await discoverLists();
+  if (!lists.length) {
+    console.log("No lists found. Make sure the API token can see your workspace.");
+    return;
   }
 
-  if (!discovered.length) {
-    console.log("\nNo lists found. Make sure the API token can see your workspace.");
-    return;
+  let lastPath = "";
+  for (const list of lists) {
+    if (list.path !== lastPath) {
+      console.log(`\n${list.path}`);
+      lastPath = list.path;
+    }
+    console.log(`  ${list.name}  (id: ${list.listId})`);
+    if (list.statuses.length) console.log(`    statuses: ${list.statuses.join(" → ")}`);
   }
 
   console.log(
     "\n─────────────────────────────────────────────────────────────────────\n" +
-      "Copy this line into .env.local. Then: delete any lists the Work pathway\n" +
-      "should NOT file into, and replace each TODO with a real description - \n" +
-      "the description is routing guidance the classifier reads to pick a list,\n" +
-      "so it's what makes work routing good.\n"
+      "To use these, open the app's Settings page: it lists the same thing with\n" +
+      "an Add button per list, and saves straight to the database - no env var\n" +
+      "and no redeploy. Each list needs a description, which is the routing\n" +
+      "guidance the classifier reads to pick a list."
   );
-  console.log(`CLICKUP_LISTS=${JSON.stringify(discovered)}`);
 }
 
 main().catch((e) => {

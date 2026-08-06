@@ -33,7 +33,7 @@ export default async function InstructionsPage() {
   } else {
     rows = (data ?? []) as Row[];
   }
-  const workConfigured = workLists().length > 0;
+  const workConfigured = (await workLists()).length > 0;
 
   const itemsFor = (scope: Row["scope"]): InstructionItem[] =>
     rows

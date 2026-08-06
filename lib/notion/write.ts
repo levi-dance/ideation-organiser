@@ -237,10 +237,14 @@ async function findSectionAnchor(pageId: string, headingText: string): Promise<s
 }
 
 /**
- * Create a new bank database under a parent page and return its data source id
- * (what `pages.create` needs as a parent). Used by seed + dynamic creation.
+ * Create a new bank database under a parent page. Rows are created under the
+ * data source id; the database id is what "open in Notion" links point at, so
+ * both are returned and both get stored on the destination row.
  */
-export async function createBankDatabase(parentPageId: string, title: string): Promise<string> {
+export async function createBankDatabase(
+  parentPageId: string,
+  title: string
+): Promise<{ dataSourceId: string; databaseId: string }> {
   const db = await notion().databases.create({
     parent: { type: "page_id", page_id: parentPageId },
     title: [{ text: { content: title } }],
@@ -256,7 +260,7 @@ export async function createBankDatabase(parentPageId: string, title: string): P
   if (!("data_sources" in db) || !db.data_sources.length) {
     throw new Error(`Database ${title} was created but returned no data source id`);
   }
-  return db.data_sources[0].id;
+  return { dataSourceId: db.data_sources[0].id, databaseId: db.id };
 }
 
 /** Create a plain container page under a parent page. */
@@ -266,4 +270,20 @@ export async function createContainerPage(parentPageId: string, title: string): 
     properties: { title: { title: [{ text: { content: title } }] } },
   });
   return page.id;
+}
+
+/**
+ * Put a heading on a freshly created document page, so a destination configured
+ * with a section heading has a real anchor to append under from the first
+ * capture instead of falling back to end-of-page with a warning.
+ */
+export async function createSectionHeading(pageId: string, heading: string): Promise<void> {
+  await notion().blocks.children.append({
+    block_id: pageId,
+    children: [
+      {
+        heading_2: { rich_text: [{ type: "text", text: { content: heading.slice(0, 200) } }] },
+      },
+    ] as unknown as AppendChildren,
+  });
 }

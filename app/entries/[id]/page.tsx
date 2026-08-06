@@ -63,7 +63,7 @@ export default async function EntryDetailPage({
     ]);
 
   // Lists available for manual routing.
-  const listOptions = workLists().map((l) => ({ listId: l.listId, name: l.name }));
+  const listOptions = (await workLists()).map((l) => ({ listId: l.listId, name: l.name }));
 
   const options = (allDests ?? []).map((d) => ({
     id: d.id as string,

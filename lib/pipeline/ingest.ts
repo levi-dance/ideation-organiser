@@ -6,6 +6,7 @@ import { formatSnippet } from "@/lib/pipeline/snippet";
 import { notionUrl } from "@/lib/notion/client";
 import { embedFiledItems, type EmbedItem } from "@/lib/pipeline/embed";
 import { activeInstructions } from "@/lib/pipeline/instructions";
+import { CATCH_ALL_SLUG } from "@/lib/setup/build-taxonomy";
 import type { DestinationWithCategory } from "@/lib/types";
 
 export type IngestResult = {
@@ -21,8 +22,6 @@ export type IngestResult = {
   errors: string[];
   lowConfidence: boolean;
 };
-
-const CATCH_ALL_SLUG = "general-notes";
 
 function isTransient(e: unknown): boolean {
   const status = (e as { status?: number })?.status;
@@ -80,7 +79,8 @@ export async function ingest(params: {
       .eq("is_active", true);
     if (taxError || !rows?.length) {
       return await fail(
-        taxError?.message ?? "No destinations found - run `npm run seed` first."
+        taxError?.message ??
+          "There is nowhere to file this yet: your second brain has no structure. Open Setup to build it in a couple of minutes."
       );
     }
     const destinations = rows as unknown as DestinationWithCategory[];

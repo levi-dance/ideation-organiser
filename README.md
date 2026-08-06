@@ -15,7 +15,8 @@ A ramble like *"grab almond milk and dish soap, oh and an idea for the newslette
 - **AI instructions you write in plain language** - tell it about your people, projects, and preferences; Claude compiles your words into precise rules it follows on every capture, and shows you exactly what it saved.
 - **Weekly synthesis** - a Monday-morning Notion page: themes, connections between entries, suggested next actions.
 - **Development prompts** - promising-but-thin ideas get 1–3 orange nudge questions written under them in Notion.
-- **Notion is the source of truth** - restructure your workspace freely; `npm run sync` reconciles the app's taxonomy to match.
+- **Guided setup** - describe your life in a paragraph and Claude proposes your filing structure; you edit it and it gets built in your Notion for you. A health check tests every service and names the exact fix for anything broken.
+- **Notion is the source of truth** - restructure your workspace freely; Sync from Notion reconciles the app's taxonomy to match.
 
 **Stack:** Next.js 15 · Supabase (Postgres + auth + pgvector) · Anthropic Claude · Notion API · Voyage AI embeddings · ClickUp API (optional) · Vercel (hosting + crons).
 
@@ -24,6 +25,8 @@ A ramble like *"grab almond milk and dish soap, oh and an idea for the newslette
 ## Setup
 
 You'll create free-tier accounts on a few services, paste keys into one env file, and deploy. Budget ~30 minutes.
+
+Everything after the keys happens inside the app: you create your login, build your filing structure, and check that each service is connected, all from the **Setup** page. No code editing, and nothing to run from a terminal.
 
 **Prerequisites:** Node 20+, and accounts on [Supabase](https://supabase.com), [Notion](https://notion.so), [Anthropic Console](https://console.anthropic.com), [Voyage AI](https://dash.voyageai.com), and [Vercel](https://vercel.com). [ClickUp](https://clickup.com) only if you want the Work pathway.
 
@@ -54,11 +57,10 @@ Fill in `.env.local` as you go through the steps below.
 2. In Notion, create an empty page (e.g. "Second Brain") - this is your root. Everything the app files lives under it.
 3. On that page: **⋯ menu → Connections → add your integration** (this grants the API access).
 4. Copy the page's ID into `NOTION_ROOT_PAGE_ID` - it's the 32-character hex string at the end of the page URL.
-5. Build your starter structure, either way:
-   - **Seed it:** open `scripts/seed-taxonomy.ts`, edit the example taxonomy (clients, banks, channels) to match your life, then `npm run seed`. Keep the catch-all's `general-notes` slug.
-   - **Or build it yourself in Notion** (databases = banks for rows; plain pages = documents to append into; pages containing others = categories), then run `npm run sync` to import the structure.
 
-   Either way, Notion stays the source of truth afterwards - restructure there, then `npm run sync` (or the Sync button in the app).
+Leave the page empty. You build the structure inside it from the app in step 7, once you can sign in.
+
+Step 3 is the step people get wrong, and the symptom is misleading: Notion answers **404** for a page that exists but hasn't been shared with your integration, so a forgotten Connections step looks exactly like a wrong page ID. The Setup page's health check calls this out by name.
 
 ### 4. Anthropic (the classifier)
 
@@ -72,20 +74,38 @@ Create a key at [dash.voyageai.com](https://dash.voyageai.com) → `VOYAGE_API_K
 
 Skip this entirely if you don't use ClickUp; the Work toggle simply won't appear.
 
-1. ClickUp **Settings → Apps → API Token** → `CLICKUP_API_TOKEN`.
-2. `npm run clickup:discover` - prints every list in your workspace, then a ready-to-paste `CLICKUP_LISTS=[…]` line containing all of them.
-3. Copy that line into `.env.local`, delete any lists the Work pathway shouldn't file into, and replace each `TODO` description with routing guidance - the description is what the classifier reads to pick a list, so it's what makes work routing good.
+Set `CLICKUP_API_TOKEN` from ClickUp **Settings → Apps → API Token**. That's the only env var involved - you choose the lists themselves in the app, on the **Settings** tab: hit **Find my lists**, add the ones work captures may be filed into, and write a description for each.
 
-The app deliberately has a tiny ClickUp permission surface: create tasks in a list's first ("dump") status and append to task descriptions. It never sets priorities, assignees, or statuses - triage stays yours.
+The description is what the classifier reads to pick a list, so it's what makes work routing good. **Suggest from tasks in the list** drafts one from the work already in that list if you'd rather edit than write.
 
-### 7. First run
+Adding a list later is the same three clicks, with no redeploy: make it in ClickUp, refresh the picker in Settings, add it, describe it, save.
+
+The app deliberately has a tiny ClickUp permission surface: read your lists and their open tasks, create tasks in a list's first ("dump") status, and append to task descriptions. It never sets priorities, assignees, or statuses - triage stays yours.
+
+### 7. First run: create your account, then your structure
 
 ```bash
-npm run set-password   # creates your login (prompts for email + password)
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000), sign in, and capture a thought. Check your Notion - it should appear within a few seconds, and the entry log (Entries tab) shows exactly what went where, with undo.
+Open [localhost:3000](http://localhost:3000). (Deploying first and doing this on the live URL works exactly the same; see step 8.)
+
+**Create your account.** Since no account exists yet, the login page offers to create one. That first account is the only one, and the form reverts to a plain sign-in immediately after. (`npm run set-password` still exists for resetting that password later.)
+
+**Check the connections.** Open **Setup** from the menu. It tests every service in turn - database tables, Notion token, root page, Claude, embeddings, ClickUp - and for anything broken it tells you the specific thing to go and change. Fix whatever it flags before continuing; a red check here is a capture that fails later.
+
+**Build your filing structure.** Same page, once the checks are green. Describe your life and work in a paragraph or two, the way you'd brief a new assistant: what you do, who for, what you make, what you catch yourself wanting to note down. Claude proposes a set of categories and the concrete places to file into, and you edit it:
+
+- Rename or delete anything, add what's missing.
+- Choose what each place is: a **list that collects items** (a Notion database, one row per thought) or a **document thoughts get added to** (one page, appended under a heading, for something you're actively writing).
+- Tick **merge repeats** on shopping-style lists so "milk" and "a gallon of milk" don't become two lines.
+- Edit each category's description. This is the part that matters: it's the only thing the classifier reads when deciding where a thought belongs, so say what belongs there *and* what doesn't, naming anything it could be confused with.
+
+Confirm, and it creates the pages, databases, and documents in your Notion, records the taxonomy, and syncs. One category is always the catch-all, so a thought that fits nothing else still lands somewhere.
+
+From here **Notion is the source of truth**: add, rename, or move pages there whenever you like, then hit **Sync from Notion** at the bottom of any page. Setup won't rebuild over an existing structure; that's what syncing is for.
+
+**Capture a thought** and check your Notion: it should appear within a few seconds, and the entry log (Entries tab) shows exactly what went where, with undo.
 
 ### Teach the AI your world (Instructions page)
 
@@ -101,11 +121,13 @@ There are separate instruction sets for Personal filing, Work filing (when Click
 
 Your compiled rules override the built-in routing judgment when they conflict - but never the safety rules (manual Personal/Work choice, hold-don't-guess, the ClickUp permission scope, undo). The built-in prompts are viewable read-only on the same page, so there's no hidden behavior.
 
-Also worth knowing: each category's routing behavior comes from its **description** in the taxonomy - `npm run sync` writes these for new categories, and sharper descriptions mean sharper filing. Instructions are for cross-cutting rules and personal facts; descriptions are for what belongs in each destination.
+Also worth knowing: each category's routing behavior comes from its **description** in the taxonomy - you write these when you build the structure on the Setup page, and syncing writes one for any category you later add in Notion. Sharper descriptions mean sharper filing. Instructions are for cross-cutting rules and personal facts; descriptions are for what belongs in each destination.
 
 ### 8. Deploy to Vercel
 
-1. `npx vercel` (link the project), then set every variable from `.env.local` in **Vercel → Project → Settings → Environment Variables**. Also set:
+You can do this before step 7 instead, and run the whole of step 7 against the live URL: nothing in it needs a local checkout.
+
+1. `npx vercel` (link the project), then set every variable from `.env.local` in **Vercel → Project → Settings → Environment Variables**. Deploying before you have created your account is fine, but sign in and create it promptly: the first-run form is open to whoever reaches the URL first, and closes permanently once an account exists. Also set:
    - `NEXT_PUBLIC_APP_URL` to your production URL (used for backlinks from Notion rows)
    - `CRON_SECRET` to a long random string (protects the cron endpoints)
    - `APP_TIMEZONE` to your IANA timezone (e.g. `America/New_York`) so the weekly synthesis dates match your week
@@ -131,28 +153,36 @@ Also worth knowing: each category's routing behavior comes from its **descriptio
 | `CRON_SECRET` | ✓ (prod) | Bearer token guard on `/api/cron/*` |
 | `APP_TIMEZONE` | - | IANA tz for synthesis dates (default UTC) |
 | `SYNTHESIS_CONTEXT` | - | A sentence about you; sharpens weekly next-actions |
-| `CLICKUP_API_TOKEN` / `CLICKUP_LISTS` | - | Enables the Work pathway when both set |
+| `CLICKUP_API_TOKEN` | - | Enables the Work pathway; the lists themselves are chosen in Settings |
+| `CLICKUP_LISTS` | - | Legacy fallback, used only until you save lists in Settings |
 
 ## npm scripts
+
+None of these are needed for setup, which happens entirely in the app. They exist for maintenance and for anyone who prefers a terminal.
 
 | Script | What it does |
 | --- | --- |
 | `npm run dev` / `build` / `start` | Next.js |
-| `npm run seed` | Create the starter Notion structure + taxonomy (empty DB only - edit first) |
-| `npm run sync` | Reconcile taxonomy from your Notion structure |
-| `npm run set-password` | Create/update the app login |
+| `npm run sync` | Reconcile taxonomy from your Notion structure (the Sync from Notion button does this) |
+| `npm run seed` | The old scripted alternative to the Setup page: creates a starter structure from a hardcoded example you edit in `scripts/seed-taxonomy.ts` first. Empty database only |
+| `npm run set-password` | Reset the app login password (first-time setup happens in-app) |
 | `npm run smoke` | End-to-end classify→file test against live services |
 | `npm run check:markdown` | Unit checks for the Markdown→Notion converter |
 | `npm run backfill:embeddings` | Embed any filed items missing from semantic search |
-| `npm run clickup:discover` | Print your ClickUp workspace's lists + IDs |
+| `npm run clickup:discover` | Print your ClickUp workspace's lists + IDs (the Settings page does this with a picker) |
 
 ## Troubleshooting
 
+**Start on the Setup page.** Its health check tests every service and names the exact fix for each failure, which is faster than matching a symptom below. The rest of this list covers things it can't see.
+
+- **Notion says the root page doesn't exist (404)** - nine times out of ten the page was never shared with your integration, not that the ID is wrong. Open the page in Notion, **⋯ menu → Connections → your integration**. Notion returns an identical 404 for both causes, which is why this one wastes so much time.
 - **"Could not find the '…' column … in the schema cache"** - the schema isn't fully applied. Re-run `supabase/schema.sql` in the SQL Editor (it's safe to run on a fresh database).
-- **"No destinations found - run `npm run seed` first."** - the taxonomy is empty: seed it, or build structure in Notion and `npm run sync`.
+- **"There is nowhere to file this yet"** - the taxonomy is empty. Build it on the **Setup** page, or build structure in Notion yourself and hit **Sync from Notion**.
+- **Setup won't let me rebuild my structure** - by design: it only builds into an empty taxonomy, so it can't quietly duplicate what you have. Change the structure in Notion (rename, move, add, delete), then **Sync from Notion**.
 - **Capture filed but search can't find it** - embeddings lagged (missing `VOYAGE_API_KEY` or a transient failure). Failed embeddings retry via the daily cron; `npm run backfill:embeddings` fixes it immediately.
 - **"Heading 'X' not found - appended at end of page"** - a document destination's configured section heading was renamed in Notion; the content still landed (end of page). Fix the heading or re-sync.
-- **Work toggle missing** - `CLICKUP_LISTS` isn't set (or is empty). That's the intended off-state for the ClickUp pathway.
+- **Work toggle missing** - no ClickUp lists are configured. Add them on the Settings tab (or set `CLICKUP_API_TOKEN` first if that section says it's missing). No lists is the intended off-state for the ClickUp pathway.
+- **Settings says the work_lists table doesn't exist** - your database predates it. Re-run `supabase/schema.sql` in the SQL Editor. Until then the Work pathway falls back to the `CLICKUP_LISTS` env var.
 - **Cron didn't run** - crons only register on a production deploy, and Vercel sends `Authorization: Bearer CRON_SECRET` - make sure the env var is set in Vercel.
 
 ## How it works

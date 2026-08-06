@@ -4,12 +4,16 @@
  * PERMISSION SCOPE - deliberate hard limit while trust is being built.
  * This module is the ONLY place that talks to the ClickUp API, and it exposes
  * exactly three capabilities:
- *   1. Read lists and their open tasks (to route and to match append targets).
+ *   1. Read the workspace structure (teams, spaces, folders, lists) and a
+ *      list's open tasks - to offer lists in Settings, to route, and to match
+ *      append targets.
  *   2. Create a new task (landing in the list's first/dump status).
  *   3. Append to an existing task's description (never replace).
  * Nothing here may change Status, Priority, Type, Platform, or any other
  * field on an existing task, delete or archive anything, or move a task
  * between lists. Do not add such capabilities without the owner's explicit OK.
+ * The write surface is exactly createTask and appendToTaskDescription; every
+ * other function in this file is a GET.
  */
 
 const API_BASE = "https://api.clickup.com/api/v2";
@@ -59,6 +63,45 @@ async function api<T>(
 
 export function clickupTaskUrl(taskId: string): string {
   return `https://app.clickup.com/t/${taskId}`;
+}
+
+/** Whether a ClickUp token is configured at all (the Work pathway is optional). */
+export function clickupTokenConfigured(): boolean {
+  return !!process.env.CLICKUP_API_TOKEN?.trim();
+}
+
+export type ClickUpNode = { id: string; name: string };
+
+/** Read-only: the workspaces this token can see. */
+export async function getTeams(): Promise<ClickUpNode[]> {
+  const { teams } = await api<{ teams: ClickUpNode[] }>("/team");
+  return teams ?? [];
+}
+
+/** Read-only: non-archived spaces in a workspace. */
+export async function getSpaces(teamId: string): Promise<ClickUpNode[]> {
+  const { spaces } = await api<{ spaces: ClickUpNode[] }>(
+    `/team/${teamId}/space?archived=false`
+  );
+  return spaces ?? [];
+}
+
+/** Read-only: non-archived folders in a space, each with its lists. */
+export async function getFolders(
+  spaceId: string
+): Promise<(ClickUpNode & { lists: ClickUpList[] })[]> {
+  const { folders } = await api<{ folders: (ClickUpNode & { lists: ClickUpList[] })[] }>(
+    `/space/${spaceId}/folder?archived=false`
+  );
+  return folders ?? [];
+}
+
+/** Read-only: lists sitting directly in a space, outside any folder. */
+export async function getFolderlessLists(spaceId: string): Promise<ClickUpList[]> {
+  const { lists } = await api<{ lists: ClickUpList[] }>(
+    `/space/${spaceId}/list?archived=false`
+  );
+  return lists ?? [];
 }
 
 /** List metadata including its ordered statuses (lowest orderindex = dump). */

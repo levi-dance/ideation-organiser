@@ -2,11 +2,22 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import CaptureForm from "@/components/capture/CaptureForm";
 import WorkspaceGrid from "@/components/WorkspaceGrid";
+import EmptyTaxonomyCard from "@/components/setup/EmptyTaxonomyCard";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { workLists } from "@/lib/clickup/lists";
 
 export const dynamic = "force-dynamic";
 
-export default function CapturePage() {
+export default async function CapturePage() {
+  const db = createSupabaseAdminClient();
+  const [workEnabled, { count }] = await Promise.all([
+    workLists().then((lists) => lists.length > 0),
+    db.from("destinations").select("*", { count: "exact", head: true }).eq("is_active", true),
+  ]);
+  // Before a taxonomy exists every capture fails at the first step, so offer the
+  // way out of that instead of a box that cannot work yet.
+  const ready = (count ?? 0) > 0;
+
   return (
     <>
       <Nav />
@@ -21,13 +32,19 @@ export default function CapturePage() {
         </div>
 
         <div className="mx-auto max-w-xl">
-          {/* The Work toggle only appears when ClickUp lists are configured. */}
-          <CaptureForm workEnabled={workLists().length > 0} />
+          {ready ? (
+            /* The Work toggle only appears when ClickUp lists are configured. */
+            <CaptureForm workEnabled={workEnabled} />
+          ) : (
+            <EmptyTaxonomyCard />
+          )}
         </div>
 
-        <div className="mt-16">
-          <WorkspaceGrid />
-        </div>
+        {ready && (
+          <div className="mt-16">
+            <WorkspaceGrid />
+          </div>
+        )}
       </main>
       <Footer />
     </>

@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     const targets = await targetsFor(scope);
     if (scope === "work" && !targets.length) {
       return NextResponse.json(
-        { error: "No ClickUp lists configured - set CLICKUP_LISTS first." },
+        { error: "No ClickUp lists configured - add them on the Settings page first." },
         { status: 400 }
       );
     }

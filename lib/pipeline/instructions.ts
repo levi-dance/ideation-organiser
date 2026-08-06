@@ -24,7 +24,7 @@ export async function targetsFor(scope: InstructionScope): Promise<CompileTarget
     }));
   }
   if (scope === "work") {
-    return workLists().map((l) => ({ name: l.name, context: l.description }));
+    return (await workLists()).map((l) => ({ name: l.name, context: l.description }));
   }
   return [];
 }

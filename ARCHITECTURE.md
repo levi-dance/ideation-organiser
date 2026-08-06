@@ -1,6 +1,6 @@
 # Second Brain Ingestion Tool - Architecture
 
-**Status:** Built (Notion pathway). Later additions not covered by this design doc: the optional ClickUp Work pathway, ask-your-brain semantic search (Voyage + pgvector), the weekly synthesis cron, Markdown→Notion-blocks filing, and AI development prompts - see the README for how those behave and are configured.
+**Status:** Built (Notion pathway). Later additions not covered by this design doc: the optional ClickUp Work pathway, ask-your-brain semantic search (Voyage + pgvector), the weekly synthesis cron, Markdown→Notion-blocks filing, AI development prompts, and in-app setup (§16) - see the README for how those behave and are configured.
 **Deliverable of this doc:** the reference design for the core capture→classify→Notion pipeline.
 
 ---
@@ -337,8 +337,9 @@ If accuracy proves too frustrating in practice, swapping in a cloud transcriptio
 
 ## 11. Auth & secrets
 
-- Supabase Auth, **email + password** (password-manager autofill; signs in in-place). Replaced the original magic link: its PKCE flow must complete in the browser context that requested it, which phone mail-app/PWA handoffs routinely break. `/auth/callback` is kept only for dashboard-sent password-recovery emails; `npm run set-password` sets the password via the admin API.
-- `@supabase/ssr` cookie sessions; `middleware.ts` guards everything except `/login`.
+- Supabase Auth, **email + password** (password-manager autofill; signs in in-place). Replaced the original magic link: its PKCE flow must complete in the browser context that requested it, which phone mail-app/PWA handoffs routinely break. `/auth/callback` is kept only for dashboard-sent password-recovery emails; `npm run set-password` resets the password via the admin API.
+- **First run:** the single account is created in-app. `/login` calls `needsFirstRunSetup()` (`lib/auth/setup.ts`), which is true only when the project has zero users, and switches the form to account creation; `POST /api/setup/account` re-checks that same condition and is the entire guard, so the route can never create a second account. Any failure reading the user list answers false, which fails closed to a sign-in form. Without this, a deployment that was never cloned locally had no way to produce a login at all, since the Supabase dashboard cannot set passwords.
+- `@supabase/ssr` cookie sessions; `middleware.ts` guards everything except `/login`, `/auth`, `/api/setup` (self-guarding, above), and `/api/cron` (guarded by `CRON_SECRET`).
 - Every API route re-verifies the session server-side before touching Notion or Anthropic.
 - `NOTION_API_KEY`, `ANTHROPIC_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` are server-only Vercel env vars - never `NEXT_PUBLIC_*`.
 
@@ -443,4 +444,43 @@ vercel.json                           -- cron config
 3. Notion `🧠 Second Brain` page - create manually, share it with the integration.
 4. Anthropic API key.
 5. Vercel project linked to the repo with all of the above as env vars (`ANTHROPIC_MODEL=claude-haiku-4-5`).
-6. Run `scripts/seed-taxonomy.ts` once to create the starter structure in both Notion and Postgres.
+6. Run `scripts/seed-taxonomy.ts` once to create the starter structure in both Notion and Postgres. **Superseded by §16:** the structure is now built from `/setup` with no terminal.
+
+---
+
+## 16. In-app setup
+
+Steps 1 to 5 above are unavoidable: they are accounts and secrets, and secrets stay in env vars. Everything after them now happens inside the app, so a friend who can follow a web page can get from a fresh deploy to a working install with no code editor and no terminal.
+
+### Account
+
+Covered in §11. Zero users means `/login` offers account creation once, and `POST /api/setup/account` re-checks the same condition as its only guard. The middleware exempts that one path by exact match, so nothing added under `/api/setup` later inherits the exemption.
+
+### Taxonomy creation (`/setup`, `lib/setup/build-taxonomy.ts`)
+
+The old wall was `scripts/seed-taxonomy.ts`: a non-coder had to open a TypeScript file, rewrite an example tree, and run `npm run seed`, and nothing downstream was reachable until they did.
+
+The replacement is a three-step flow:
+
+1. **Describe.** The user writes a paragraph or two about their life and work. `lib/claude/propose-taxonomy.ts` turns it into a proposed tree via one structured-output call: categories with routing descriptions, and typed destinations under each. The proposal is normalized before it reaches the UI (unique keys, no dangling or cyclic parents, depth cap, exactly one catch-all) so a bad generation can never render as an empty or looping tree.
+2. **Edit.** Rename, delete, add, re-parent, switch a destination between `bank_database` and `document_section`, toggle dedup, set a document's section heading, and rewrite every description. Descriptions get the most emphasis in the copy because they are the only thing the classifier reads. Regenerating with free-text feedback is available and replaces the whole tree.
+3. **Build.** `buildTaxonomy()` creates a container page per category (nested per parent), a database per bank, and a childless page per document, then inserts the matching `categories`/`destinations` rows, then runs `runNotionSync()`.
+
+The Notion mapping is chosen so the sync in §6 reads the result back unchanged: a page with children is a category, a childless page is a document destination, a database is a bank. That is why a category with no destinations and no children is rejected at validation - it would create a bare page that a later sync would import as a document destination the classifier then files real thoughts into.
+
+Two invariants worth stating:
+
+- **The catch-all keeps the slug `general-notes`,** whatever the user names it. `CATCH_ALL_SLUG` is exported from `lib/setup/build-taxonomy.ts` and consumed by the ingest pipeline; validation refuses a plan without exactly one catch-all.
+- **The build is all-or-nothing.** A failure part way through trashes the Notion pages created so far (top-level pages only; Notion takes the subtree with them) and deletes the inserted rows, then rethrows. Without that, `assertBuildable` would refuse the retry while half a structure sat in Notion. Pages go to Notion's trash, never hard-deleted.
+
+`assertBuildable` refuses when any active destination already exists. Building on top of an existing taxonomy is what the Sync button is for, and the copy says so in both the API error and the Setup page.
+
+### Health check (`lib/setup/health.ts`, `/api/health`)
+
+Every credential failure used to surface as a raw API error mid-capture, or as silence. The health panel probes each dependency and pairs every failure with the exact remedy: required env vars, all twelve schema tables, the Notion token, the root page, the Anthropic key and model, Voyage, the taxonomy itself, ClickUp, and the production-only settings. Each check owns its own failure, and nothing throws.
+
+The one that earns its own paragraph: **Notion answers 404 for a page that exists but has not been shared with the integration**, which is indistinguishable from a wrong page ID. That is the single most common setup failure and the error text is actively misleading, so the remedy names the "page menu, Connections, add your integration" step explicitly and puts it first, before questioning the ID. A 401 on the same check reports that the token is the problem rather than sending the user to re-share a page.
+
+### Empty states
+
+With an empty taxonomy the capture form can only fail, so `/` shows the setup card in its place rather than a box that cannot work, `WorkspaceGrid` renders the same card instead of nothing, and the ingest error names the Setup page instead of `npm run seed`.

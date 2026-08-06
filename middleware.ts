@@ -30,6 +30,10 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute =
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/auth") ||
+    // First-run account creation, which guards itself by refusing once any
+    // user exists (see lib/auth/setup.ts). Named exactly, so nothing else added
+    // under /api/setup inherits the exemption.
+    request.nextUrl.pathname === "/api/setup/account" ||
     // Cron routes authenticate with CRON_SECRET inside the handler.
     request.nextUrl.pathname.startsWith("/api/cron");
 

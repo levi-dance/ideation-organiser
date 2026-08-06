@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import EmptyTaxonomyCard from "@/components/setup/EmptyTaxonomyCard";
 import { notionUrl } from "@/lib/notion/client";
 import { categoryStyle } from "@/lib/design/category-style";
 import { relativeTime } from "@/lib/design/relative-time";
@@ -38,7 +39,9 @@ export default async function WorkspaceGrid() {
     return cb.localeCompare(ca) || a.title.localeCompare(b.title);
   });
 
-  if (!dests.length) return null;
+  // An empty taxonomy is the state a fresh install starts in, and capture fails
+  // outright until it is fixed. Say so here rather than rendering nothing.
+  if (!dests.length) return <EmptyTaxonomyCard />;
 
   return (
     <section className="space-y-4">

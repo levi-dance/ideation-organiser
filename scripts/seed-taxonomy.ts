@@ -2,10 +2,16 @@
  * One-time seed: creates a starter Notion structure under NOTION_ROOT_PAGE_ID
  * and mirrors it into the Postgres taxonomy (categories + destinations).
  *
+ * THE SETUP PAGE REPLACES THIS. /setup describes your life to Claude, lets you
+ * edit the proposed structure in the browser, and builds it, with no file to
+ * edit and no terminal. This script is kept for anyone who would rather write
+ * the tree by hand; it is not part of the documented setup path.
+ *
  * The taxonomy below is an EXAMPLE - edit the names, clients, and banks to
  * match your life before running. Only the catch-all's slug ("general-notes")
- * must stay: lib/pipeline/ingest.ts uses it as CATCH_ALL_SLUG. After seeding,
- * Notion is the source of truth - restructure there and run `npm run sync`.
+ * must stay: lib/setup/build-taxonomy.ts exports it as CATCH_ALL_SLUG and the
+ * ingest pipeline routes low-confidence captures there. After seeding, Notion is
+ * the source of truth - restructure there and run `npm run sync`.
  *
  * Run: npm run seed
  * Safe to re-run only on an empty database - it does not dedupe.

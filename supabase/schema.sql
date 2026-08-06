@@ -153,6 +153,23 @@ $$;
 
 -- ── ClickUp "Work" pathway (optional) ───────────────────────────────────────
 
+-- The lists work captures may be filed into, managed on the Settings page.
+-- description is routing guidance the classifier reads to pick a list, so it
+-- is required. Unticking a list in Settings sets is_active false rather than
+-- deleting the row, which is also what makes this table (once it has any row
+-- at all) authoritative over the legacy CLICKUP_LISTS env var.
+create table work_lists (
+  id uuid primary key default gen_random_uuid(),
+  list_id text unique not null, -- the real ClickUp List ID
+  key text not null,            -- stable routing key the classifier returns
+  name text not null,
+  description text not null,
+  is_active boolean not null default true,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- Every write the agent performs against ClickUp, for review in the entry log.
 -- Append-only by design: the agent may create tasks and append to descriptions.
 create table clickup_actions (
@@ -206,6 +223,7 @@ create index categories_parent_idx on categories (parent_category_id);
 create index destinations_category_idx on destinations (category_id);
 create index job_queue_pending_idx on job_queue (status, run_after);
 create index entry_embeddings_entry_idx on entry_embeddings (entry_id);
+create index work_lists_active_idx on work_lists (is_active, sort_order);
 create index clickup_actions_entry_idx on clickup_actions (entry_id);
 create index work_routing_queue_entry_idx on work_routing_queue (entry_id);
 create index work_routing_queue_status_idx on work_routing_queue (status);
@@ -225,6 +243,7 @@ alter table undo_log enable row level security;
 alter table job_queue enable row level security;
 alter table entry_embeddings enable row level security;
 alter table ai_instructions enable row level security;
+alter table work_lists enable row level security;
 
 create policy "authenticated read" on categories for select to authenticated using (true);
 create policy "authenticated read" on destinations for select to authenticated using (true);
@@ -232,3 +251,4 @@ create policy "authenticated read" on entries for select to authenticated using 
 create policy "authenticated read" on entry_destinations for select to authenticated using (true);
 create policy "authenticated read" on entry_embeddings for select to authenticated using (true);
 create policy "authenticated read" on ai_instructions for select to authenticated using (true);
+create policy "authenticated read" on work_lists for select to authenticated using (true);

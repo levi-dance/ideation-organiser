@@ -70,9 +70,9 @@ export async function ingestWork(params: {
 
   try {
     // 2. Load the lists and their open tasks (routing context + append targets).
-    const lists = workLists();
+    const lists = await workLists();
     if (!lists.length) {
-      return await fail("No ClickUp lists configured - set CLICKUP_LISTS (see README).");
+      return await fail("No ClickUp lists configured - add them on the Settings page.");
     }
     const tasksByList = new Map<string, ClickUpTask[]>();
     await Promise.all(

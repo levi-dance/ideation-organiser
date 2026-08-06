@@ -30,7 +30,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "queueItemId and listId are required" }, { status: 400 });
   }
 
-  const list = workLists().find((l) => l.listId === listId);
+  const list = (await workLists()).find((l) => l.listId === listId);
   if (!list) {
     return NextResponse.json({ error: "Unknown ClickUp list" }, { status: 400 });
   }
