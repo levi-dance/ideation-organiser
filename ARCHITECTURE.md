@@ -24,7 +24,7 @@ Core behaviors:
 2. **Multi-destination routing** - one entry can land in several places at once. A draft thought about family gets appended to the piece currently being written on that topic *and* to a family idea bank - creating that bank if it doesn't exist.
 3. **Neat filing** - content is cleaned and formatted by the LLM before writing, not dumped raw; appended at the bottom of the relevant list or document section.
 4. **Master entry log** - every raw entry recorded with a timestamp and links to every Notion destination it was filed to. "Everything I've entered" and "the organized end state" are both always available.
-5. **Follow-ups** - "if there's a supporting scripture for that thought, add it too" resolves against recent entries and files adjacent to the original.
+5. **Follow-ups** - "if there's a supporting reference for that thought, add it too" resolves against recent entries and files adjacent to the original.
 6. **Semantic dedup** - for list destinations (groceries especially): "milk", "2% milk", and "a gallon of milk" don't become three lines; items already on the list aren't re-added.
 7. **Auto-file with undo** - files immediately for speed; every action is visible in the entry log with one-tap undo/reassign.
 
@@ -298,11 +298,11 @@ Created immediately (consistent with auto-file) but never silently: `created_new
 
 ---
 
-## 8. Follow-ups ("add supporting scripture to that")
+## 8. Follow-ups ("add supporting reference to that")
 
 No formal session model. Every classification call includes the **last 5–10 entries** (id, short text, destinations filed) as candidate referents; the model does explicit reference resolution (`is_followup`, `followup_target_entry_id`) from recency and phrasing. The UI shows a "referring to: [snippet]" chip with manual override, since occasional misresolution is inevitable and cheap to fix.
 
-A resolved follow-up biases toward the parent's exact destinations and block ids, so the addition lands **physically adjacent** - scripture appended right next to the original thought via `after`-insertion, not just somewhere on the same page.
+A resolved follow-up biases toward the parent's exact destinations and block ids, so the addition lands **physically adjacent** - reference appended right next to the original thought via `after`-insertion, not just somewhere on the same page.
 
 ---
 
