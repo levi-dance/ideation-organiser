@@ -47,6 +47,7 @@ const TABLES = [
   "clickup_actions",
   "work_routing_queue",
   "ai_instructions",
+  "app_settings",
 ];
 
 const SCHEMA_REMEDY =
@@ -97,7 +98,11 @@ async function schemaCheck(): Promise<HealthCheck> {
 
   await Promise.all(
     TABLES.map(async (table) => {
-      const { error } = await db.from(table).select("*", { count: "exact", head: true });
+      // Deliberately not head:true. A HEAD request has no body for PostgREST to
+      // put its error into, so supabase-js reports a missing table as success
+      // with a null count, and this check would pass on an unapplied schema.
+      // limit(0) keeps it just as cheap while still surfacing the error.
+      const { error } = await db.from(table).select("*", { count: "exact" }).limit(0);
       if (!error) return;
       if (/does not exist|schema cache|Could not find/i.test(error.message)) missing.push(table);
       else failed.push(`${table} (${error.message})`);

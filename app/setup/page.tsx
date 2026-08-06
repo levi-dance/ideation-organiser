@@ -76,11 +76,15 @@ export default async function SetupPage() {
               ))}
             </ul>
             <p className="text-sm" style={{ color: "var(--color-ink-muted)" }}>
-              Next: teach it about your people and projects on the{" "}
+              Filing something in the wrong place? Sharpen that category&rsquo;s description under{" "}
+              <Link href="/settings" className="link-blue">
+                Settings
+              </Link>
+              . For rules that cut across categories, and facts about your people and projects, use{" "}
               <Link href="/instructions" className="link-blue">
                 Instructions
-              </Link>{" "}
-              page. That is what lifts filing from reasonable to right.
+              </Link>
+              . Between them, that is what lifts filing from reasonable to right.
             </p>
           </section>
         ) : (

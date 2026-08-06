@@ -198,6 +198,21 @@ create table work_routing_queue (
   created_at timestamptz not null default now()
 );
 
+-- ── App settings ────────────────────────────────────────────────────────────
+
+-- Non-secret configuration the owner can change without redeploying. One row,
+-- forever: the id column only accepts true, so a second row cannot be inserted.
+-- Secrets stay in environment variables and never appear here.
+create table app_settings (
+  id boolean primary key default true check (id),
+  -- IANA zone deciding which calendar week the weekly synthesis covers and how
+  -- its dates read. Kept here rather than in an env var so it is not baked into
+  -- a shared deployment, and so changing it does not need a redeploy.
+  timezone text not null default 'UTC',
+  updated_at timestamptz not null default now()
+);
+insert into app_settings (id) values (true) on conflict (id) do nothing;
+
 -- ── AI instructions ─────────────────────────────────────────────────────────
 
 -- User-authored instructions, compiled by Claude into rules the filing model
@@ -244,6 +259,7 @@ alter table job_queue enable row level security;
 alter table entry_embeddings enable row level security;
 alter table ai_instructions enable row level security;
 alter table work_lists enable row level security;
+alter table app_settings enable row level security;
 
 create policy "authenticated read" on categories for select to authenticated using (true);
 create policy "authenticated read" on destinations for select to authenticated using (true);
@@ -252,3 +268,4 @@ create policy "authenticated read" on entry_destinations for select to authentic
 create policy "authenticated read" on entry_embeddings for select to authenticated using (true);
 create policy "authenticated read" on ai_instructions for select to authenticated using (true);
 create policy "authenticated read" on work_lists for select to authenticated using (true);
+create policy "authenticated read" on app_settings for select to authenticated using (true);

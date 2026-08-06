@@ -1,18 +1,43 @@
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import WorkListsPanel, { type EditableList } from "@/components/settings/WorkListsPanel";
+import TimezonePanel from "@/components/settings/TimezonePanel";
+import CategoryDescriptionsPanel, {
+  type EditableCategory,
+} from "@/components/settings/CategoryDescriptionsPanel";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { clickupTokenConfigured } from "@/lib/clickup/client";
 import { envWorkLists } from "@/lib/clickup/lists";
+import { timezoneWithSource } from "@/lib/settings/app-settings";
+import type { Category, Destination } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+type DestRow = Destination & { category: Category };
+
 export default async function SettingsPage() {
   const db = createSupabaseAdminClient();
-  const { data, error } = await db
-    .from("work_lists")
-    .select("list_id, name, description, is_active")
-    .order("sort_order");
+  const [{ data, error }, tz, { data: destRows }] = await Promise.all([
+    db.from("work_lists").select("list_id, name, description, is_active").order("sort_order"),
+    timezoneWithSource(),
+    db.from("destinations").select("*, category:categories(*)").eq("is_active", true),
+  ]);
+
+  // Categories are the unit a description belongs to, so fold the active
+  // destinations up into the category that owns them.
+  const byCategory = new Map<string, EditableCategory>();
+  for (const d of (destRows ?? []) as unknown as DestRow[]) {
+    const existing = byCategory.get(d.category.id);
+    if (existing) existing.destinationTitles.push(d.title);
+    else
+      byCategory.set(d.category.id, {
+        id: d.category.id,
+        name: d.category.name,
+        description: d.category.description,
+        destinationTitles: [d.title],
+      });
+  }
+  const categories = [...byCategory.values()].sort((a, b) => a.name.localeCompare(b.name));
 
   const tableMissing = !!error;
   const rows = data ?? [];
@@ -64,6 +89,14 @@ export default async function SettingsPage() {
         {envError && (
           <p className="card border-red-300 bg-red-50 p-3 text-sm text-red-700">{envError}</p>
         )}
+
+        <CategoryDescriptionsPanel initialCategories={categories} />
+
+        <TimezonePanel
+          initialTimezone={tz.timezone}
+          source={tz.source}
+          tableMissing={tz.tableMissing}
+        />
 
         <WorkListsPanel
           initialLists={initialLists}

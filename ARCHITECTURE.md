@@ -347,40 +347,61 @@ If accuracy proves too frustrating in practice, swapping in a cloud transcriptio
 
 ## 12. Project structure (Next.js App Router)
 
+As built. This section is kept current, unlike the phased plan below it.
+
 ```
 app/
-  (auth)/login/page.tsx
-  (app)/page.tsx                      -- capture UI (mic + text)
-  (app)/entries/page.tsx              -- entry log (list/search/filter)
-  (app)/entries/[id]/page.tsx         -- entry detail: transcript, destinations, undo
-  (app)/taxonomy/page.tsx             -- browse/rename/merge/re-parent tree nodes
-  (app)/settings/page.tsx             -- Notion status, model config, cost dashboard
+  login/page.tsx                      -- sign in, or create the one account on first run
+  page.tsx                            -- capture UI (mic + text)
+  entries/page.tsx                    -- entry log (list/search/filter)
+  entries/[id]/page.tsx               -- entry detail: transcript, destinations, undo
+  ask/page.tsx                        -- ask your brain (semantic search + cited answer)
+  instructions/page.tsx               -- plain-language rules, compiled by Claude
+  settings/page.tsx                   -- category descriptions, timezone, ClickUp lists
+  setup/page.tsx                      -- health check + first-run taxonomy builder (§16)
   api/entries/route.ts                -- POST: ingest pipeline entrypoint
-  api/entries/[id]/route.ts           -- GET / PATCH
-  api/entries/[id]/undo/route.ts
-  api/entries/[id]/reassign/route.ts
-  api/categories/route.ts
-  api/cron/retry-failed/route.ts      -- Vercel Cron target
-  api/cron/refresh-summaries/route.ts
-  middleware.ts
+  api/entries/[id]/{undo,reassign,route-work}/route.ts
+  api/categories/[id]/route.ts        -- PUT: edit a category's routing description
+  api/categories/[id]/suggest/route.ts
+  api/taxonomy/route.ts               -- POST: build the confirmed structure
+  api/taxonomy/propose/route.ts       -- POST: draft a structure from a paragraph
+  api/health/route.ts                 -- every dependency, with remedies
+  api/settings/general/route.ts       -- timezone
+  api/settings/clickup/{route,discover,suggest}.ts
+  api/setup/account/route.ts          -- first-run account, self-guarding
+  api/sync/route.ts                   -- reconcile the taxonomy from Notion
+  api/instructions/[[id]]/route.ts
+  api/cron/{retry-failed,weekly-synthesis}/route.ts
+
+middleware.ts                         -- session guard; exempts /login, /auth,
+                                         /api/setup/account, /api/cron
 
 lib/
   supabase/{server.ts, client.ts}
-  notion/{client.ts, write.ts, read.ts, format.ts}
-  claude/{client.ts, classify.ts, dedup.ts, summarize.ts, prompts/}
-  pipeline/{ingest.ts, followup.ts, undo.ts}
-  db/{schema.ts, queries.ts}
+  notion/{client.ts, write.ts, sync.ts, markdown.ts}
+  claude/{classify.ts, classify-work.ts, describe.ts, propose-taxonomy.ts,
+          synthesize.ts, ask.ts, compile-instructions.ts}
+  pipeline/{ingest.ts, ingest-work.ts, undo.ts, embed.ts, instructions.ts, snippet.ts}
+  setup/{build-taxonomy.ts, health.ts}
+  settings/app-settings.ts            -- non-secret config stored in Postgres
+  clickup/{client.ts, discover.ts, lists.ts}
+  embeddings/voyage.ts
+  auth/setup.ts
   types.ts
 
 components/
-  capture/{MicButton.tsx, TranscriptEditor.tsx, CaptureForm.tsx}
-  entries/{EntryCard.tsx, DestinationBadge.tsx, EntryList.tsx}
-  taxonomy/CategoryTree.tsx
+  capture/CaptureForm.tsx
+  entries/{CategoryChip,DestinationActions,RouteWorkActions,StatusBadge}.tsx
+  setup/{TaxonomyBuilder,HealthPanel,EmptyTaxonomyCard}.tsx
+  settings/{CategoryDescriptionsPanel,TimezonePanel,WorkListsPanel}.tsx
+  {Nav,Footer,WorkspaceGrid,SyncButton}.tsx
 
-supabase/migrations/*.sql
-scripts/seed-taxonomy.ts              -- one-time: creates starter Notion structure + seeds Postgres
+supabase/schema.sql                   -- the whole database, one file (see below)
+scripts/                              -- maintenance only; setup needs none of them
 vercel.json                           -- cron config
 ```
+
+**The database is one file.** `supabase/schema.sql` is the entire schema, applied by pasting it into the Supabase SQL Editor. The numbered migration files this section used to describe were deliberately consolidated and deleted; do not reintroduce them. When the schema changes, update `schema.sql` for new installs and hand the owner a standalone DDL snippet for their already-provisioned database.
 
 `lib/pipeline/ingest.ts` is the single orchestration function the API route calls - keeps classify → route → write → log testable independent of HTTP.
 
@@ -439,12 +460,14 @@ vercel.json                           -- cron config
 
 ## 15. What building Phase 1 requires (setup checklist)
 
-1. Supabase project - run the migration in §5, enable magic-link auth, note the URL + anon key + service-role key.
+1. Supabase project - paste `supabase/schema.sql` into the SQL Editor and run it once (one file, not a migration sequence), make sure the Email auth provider is enabled, and note the URL + anon key + service-role key.
 2. Notion internal integration - create at notion.so/my-integrations, copy the token.
-3. Notion `🧠 Second Brain` page - create manually, share it with the integration.
+3. Notion `🧠 Second Brain` page - create manually, share it with the integration through the page menu, Connections. Notion answers 404 for a page that exists but was never shared, so skipping this looks exactly like a wrong page id.
 4. Anthropic API key.
 5. Vercel project linked to the repo with all of the above as env vars (`ANTHROPIC_MODEL=claude-haiku-4-5`).
-6. Run `scripts/seed-taxonomy.ts` once to create the starter structure in both Notion and Postgres. **Superseded by §16:** the structure is now built from `/setup` with no terminal.
+6. Open the deployment and create the one account on the login page, then build the taxonomy at `/setup`. Both happen in the browser; see §16.
+
+Auth is **email + password**, not magic link. §2 records why the magic link was replaced, and §11 describes how the single account gets created. There is no magic-link setting to enable.
 
 ---
 
@@ -484,3 +507,19 @@ The one that earns its own paragraph: **Notion answers 404 for a page that exist
 ### Empty states
 
 With an empty taxonomy the capture form can only fail, so `/` shows the setup card in its place rather than a box that cannot work, `WorkspaceGrid` renders the same card instead of nothing, and the ingest error names the Setup page instead of `npm run seed`.
+
+### Editing category descriptions (Settings)
+
+`categories.description` is the only thing the classifier reads to place a thought, and for a while it could only be written once: at build time in `/setup`, or by `describeCategories()` when sync discovered a new category. Sync updates a known category's `name`, `is_active`, and `notion_page_id` but never its description, and descriptions live only in Postgres, so editing the Notion page did nothing either. Someone whose filing drifted had no way to correct it.
+
+Settings now owns them. Each category gets its description in a textarea, a save, a revert, and **Suggest from what is filed here**, which samples the most recent `entry_destinations` rows for that category and asks Claude to write a description grounded in what actually landed there, naming the sibling categories so the result discriminates rather than merely describes.
+
+Names are deliberately not editable here: a category's name mirrors its Notion page title and the next sync overwrites it, so an editable field would appear to work and then silently revert. The panel says so and points at Notion plus Sync instead.
+
+### Non-secret configuration in Postgres (`app_settings`)
+
+The rule is that secrets stay in environment variables and everything else belongs in the database. The timezone was the last thing on the wrong side of that line: it was `APP_TIMEZONE`, which meant one person's setting travelled with a repo other people deploy, and changing it needed a redeploy.
+
+`app_settings` is a single-row table (`id boolean primary key check (id)` makes a second row impossible) holding the IANA timezone. `appTimezone()` reads it, falls back to `APP_TIMEZONE` for installs that predate the table, then to UTC, and never throws. Settings offers a picker built from `Intl.supportedValuesOf("timeZone")` plus a "use this device's timezone" shortcut, and tells the user when the value is still coming from the env var so they can save it once and delete the variable.
+
+**The weekly synthesis schedule follows from this.** Vercel cron expressions are UTC only and static in `vercel.json`, so any fixed weekly time is somebody's Monday morning and somebody else's Sunday afternoon. Instead the cron fires **daily** and the route decides for itself whether today is Monday in the owner's stored timezone, no-opping otherwise. That keeps the schedule timezone-neutral in the file while delivery follows the setting, and it stays within a once-per-day cron budget. Because a daily trigger plus a retry could write the same week twice, the route checks the Weekly Synthesis container for a page with this week's title before spending a Claude call, and `?force=1` bypasses both checks for testing.

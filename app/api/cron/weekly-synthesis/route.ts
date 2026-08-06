@@ -7,6 +7,7 @@ import { synthesizeWeek, type WeekItem } from "@/lib/claude/synthesize";
 import { withRetry } from "@/lib/pipeline/ingest";
 import { activeInstructions } from "@/lib/pipeline/instructions";
 import { splitSnippet } from "@/lib/pipeline/snippet";
+import { appTimezone } from "@/lib/settings/app-settings";
 
 export const maxDuration = 60;
 
@@ -52,10 +53,46 @@ async function findOrCreateContainer(rootId: string): Promise<string> {
   return createContainerPage(rootId, CONTAINER_TITLE);
 }
 
+/** The day of the week it currently is where the owner lives. */
+function localWeekday(timezone: string, date = new Date()): string {
+  return new Intl.DateTimeFormat("en-US", { timeZone: timezone, weekday: "long" }).format(date);
+}
+
 /**
- * Vercel Cron target (schedule in vercel.json is UTC - adjust it to land on
- * your local Monday morning). Reads the last 7 days of filed items and writes
- * a "Week of …" synthesis page into Notion.
+ * Whether this week's page is already in the container. Vercel can retry a
+ * cron invocation, and the run is not otherwise idempotent: without this a
+ * retry would write a second page for the same week.
+ */
+async function weekAlreadyWritten(containerId: string, weekTitle: string): Promise<boolean> {
+  const wanted = weekTitle.trim().toLowerCase();
+  let cursor: string | undefined;
+  do {
+    const res = await notion().blocks.children.list({
+      block_id: containerId,
+      page_size: 100,
+      start_cursor: cursor,
+    });
+    for (const block of res.results) {
+      if (!("type" in block) || block.type !== "child_page") continue;
+      const child = block as unknown as { child_page: { title: string } };
+      if (child.child_page.title.trim().toLowerCase() === wanted) return true;
+    }
+    cursor = res.has_more ? (res.next_cursor ?? undefined) : undefined;
+  } while (cursor);
+  return false;
+}
+
+/**
+ * Vercel Cron target. The schedule in vercel.json fires this once a day at a
+ * fixed UTC hour, and the run decides for itself whether today is Monday where
+ * the owner actually lives, using the timezone saved in Settings.
+ *
+ * Doing it this way rather than encoding the hour in the cron expression is
+ * what keeps one person's timezone out of a repo other people deploy: Vercel
+ * cron expressions are UTC only and static in the file, so any single schedule
+ * would be somebody's Monday morning and somebody else's Sunday afternoon.
+ *
+ * Pass ?force=1 to run it on any day, for testing.
  */
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
@@ -64,6 +101,15 @@ export async function GET(request: Request) {
   }
 
   const db = createSupabaseAdminClient();
+  const timezone = await appTimezone(db);
+  const force = new URL(request.url).searchParams.get("force") === "1";
+  if (!force && localWeekday(timezone) !== "Monday") {
+    return NextResponse.json({
+      skipped: true,
+      reason: `it is ${localWeekday(timezone)} in ${timezone}, not Monday`,
+    });
+  }
+
   const since = new Date(Date.now() - 7 * 24 * 3_600_000).toISOString();
   const { data: rows, error } = await db
     .from("entry_destinations")
@@ -91,19 +137,24 @@ export async function GET(request: Request) {
   }
 
   try {
-    const customContext = await activeInstructions(db, "synthesis");
-    const markdown = await withRetry(() => synthesizeWeek(items, customContext));
-
     const rootId = process.env.NOTION_ROOT_PAGE_ID;
     if (!rootId) throw new Error("NOTION_ROOT_PAGE_ID is not set");
     const containerId = await findOrCreateContainer(rootId);
 
     const weekTitle = `Week of ${new Date().toLocaleDateString(undefined, {
-      timeZone: process.env.APP_TIMEZONE || "UTC",
+      timeZone: timezone,
       day: "numeric",
       month: "short",
       year: "numeric",
     })}`;
+    // Checked before the Claude call so a retry costs nothing.
+    if (!force && (await weekAlreadyWritten(containerId, weekTitle))) {
+      return NextResponse.json({ skipped: true, reason: `${weekTitle} already exists` });
+    }
+
+    const customContext = await activeInstructions(db, "synthesis");
+    const markdown = await withRetry(() => synthesizeWeek(items, customContext, timezone));
+
     const page = await notion().pages.create({
       parent: { page_id: containerId },
       properties: { title: { title: [{ text: { content: weekTitle } }] } },

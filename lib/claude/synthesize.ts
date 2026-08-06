@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { DEFAULT_TIMEZONE } from "@/lib/settings/app-settings";
 
 export type WeekItem = {
   categoryName: string;
@@ -34,7 +35,8 @@ Ground every observation in the actual entries. Be specific and brief; never pad
 /** One Claude call turning the week's filed items into a markdown synthesis. */
 export async function synthesizeWeek(
   items: WeekItem[],
-  customContext?: string | null
+  customContext?: string | null,
+  timezone: string = DEFAULT_TIMEZONE
 ): Promise<string> {
   const client = new Anthropic();
   const model = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5";
@@ -52,7 +54,7 @@ export async function synthesizeWeek(
         list
           .map((i) => {
             const day = new Date(i.createdAt).toLocaleDateString(undefined, {
-              timeZone: process.env.APP_TIMEZONE || "UTC",
+              timeZone: timezone,
               weekday: "short",
             });
             return `- [${day}] ${i.destinationTitle}: ${i.title}${i.body ? `. ${i.body}` : ""}`;

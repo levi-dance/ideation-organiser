@@ -160,10 +160,14 @@ export function validatePlan(categories: PlannedCategory[]): void {
  * exists rather than layering a second structure on top of the first.
  */
 export async function assertBuildable(db: SupabaseClient): Promise<void> {
+  // Not head:true: a HEAD request gives PostgREST nowhere to put its error, so
+  // a missing table would read as an empty one and the build would get all the
+  // way to its first insert before failing with a worse message.
   const { count, error } = await db
     .from("destinations")
-    .select("*", { count: "exact", head: true })
-    .eq("is_active", true);
+    .select("*", { count: "exact" })
+    .eq("is_active", true)
+    .limit(0);
   if (error) {
     throw new BuildValidationError(
       `Could not read the destinations table: ${error.message}. Run supabase/schema.sql in the Supabase SQL Editor first.`

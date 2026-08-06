@@ -16,6 +16,7 @@ A ramble like *"grab almond milk and dish soap, oh and an idea for the newslette
 - **Weekly synthesis** - a Monday-morning Notion page: themes, connections between entries, suggested next actions.
 - **Development prompts** - promising-but-thin ideas get 1–3 orange nudge questions written under them in Notion.
 - **Guided setup** - describe your life in a paragraph and Claude proposes your filing structure; you edit it and it gets built in your Notion for you. A health check tests every service and names the exact fix for anything broken.
+- **Tune it as you go** - every category's routing description is editable in Settings, with an AI draft built from what's actually been filed there. Filing that drifts is fixable in a sentence.
 - **Notion is the source of truth** - restructure your workspace freely; Sync from Notion reconciles the app's taxonomy to match.
 
 **Stack:** Next.js 15 · Supabase (Postgres + auth + pgvector) · Anthropic Claude · Notion API · Voyage AI embeddings · ClickUp API (optional) · Vercel (hosting + crons).
@@ -121,7 +122,13 @@ There are separate instruction sets for Personal filing, Work filing (when Click
 
 Your compiled rules override the built-in routing judgment when they conflict - but never the safety rules (manual Personal/Work choice, hold-don't-guess, the ClickUp permission scope, undo). The built-in prompts are viewable read-only on the same page, so there's no hidden behavior.
 
-Also worth knowing: each category's routing behavior comes from its **description** in the taxonomy - you write these when you build the structure on the Setup page, and syncing writes one for any category you later add in Notion. Sharper descriptions mean sharper filing. Instructions are for cross-cutting rules and personal facts; descriptions are for what belongs in each destination.
+### Fix filing that lands in the wrong place (Settings)
+
+Instructions are one of two levers. The other is each category's **description**, which is the only thing the classifier reads when choosing between categories. You write these when you build the structure, and you edit them any time under **Settings → How filing decides**.
+
+That page also has **Suggest from what is filed here**: it reads the most recent items actually filed into that category and drafts a description grounded in them, naming the neighbouring categories so the result tells them apart rather than just restating the name. Edit and save.
+
+Use descriptions for *what belongs in each destination*, and Instructions for cross-cutting rules and facts about your people and projects. Category names aren't editable there on purpose: they mirror your Notion page titles, so rename the page in Notion and hit **Sync from Notion**.
 
 ### 8. Deploy to Vercel
 
@@ -130,11 +137,12 @@ You can do this before step 7 instead, and run the whole of step 7 against the l
 1. `npx vercel` (link the project), then set every variable from `.env.local` in **Vercel → Project → Settings → Environment Variables**. Deploying before you have created your account is fine, but sign in and create it promptly: the first-run form is open to whoever reaches the URL first, and closes permanently once an account exists. Also set:
    - `NEXT_PUBLIC_APP_URL` to your production URL (used for backlinks from Notion rows)
    - `CRON_SECRET` to a long random string (protects the cron endpoints)
-   - `APP_TIMEZONE` to your IANA timezone (e.g. `America/New_York`) so the weekly synthesis dates match your week
+
+   Your timezone isn't an env var: set it under **Settings** once you're signed in.
 2. In Supabase **Authentication → URL Configuration**, set the Site URL to your production URL.
 3. `npx vercel deploy --prod`. The two crons in `vercel.json` register on deploy:
    - `retry-failed` - daily, retries any Notion/ClickUp write that failed
-   - `weekly-synthesis` - Sundays 20:00 **UTC**. Vercel crons are UTC-only, so shift the schedule to land on your Monday morning (e.g. New York: `0 11 * * 1` ≈ 6–7am Monday; Sydney: `0 20 * * 0`).
+   - `weekly-synthesis` - runs daily and does nothing unless it's Monday **in your timezone**, so you get a genuine Monday review wherever you are, with no schedule to edit. Vercel crons are UTC-only and can't read your settings, which is why the day is decided in the app rather than in the cron expression. The fixed `19:00 UTC` only sets what time of day it lands (Monday morning in Australia, late morning in the Americas, evening in Europe); change it in `vercel.json` and redeploy if you'd rather have it at another hour.
 
 ---
 
@@ -151,7 +159,7 @@ You can do this before step 7 instead, and run the whole of step 7 against the l
 | `VOYAGE_MODEL` | - | Defaults to `voyage-3.5-lite` (keep 1024-dim) |
 | `NEXT_PUBLIC_APP_URL` | ✓ (prod) | Backlink URL written into Notion rows |
 | `CRON_SECRET` | ✓ (prod) | Bearer token guard on `/api/cron/*` |
-| `APP_TIMEZONE` | - | IANA tz for synthesis dates (default UTC) |
+| `APP_TIMEZONE` | - | Legacy fallback, used only until you set your timezone in Settings |
 | `SYNTHESIS_CONTEXT` | - | A sentence about you; sharpens weekly next-actions |
 | `CLICKUP_API_TOKEN` | - | Enables the Work pathway; the lists themselves are chosen in Settings |
 | `CLICKUP_LISTS` | - | Legacy fallback, used only until you save lists in Settings |
@@ -183,7 +191,9 @@ None of these are needed for setup, which happens entirely in the app. They exis
 - **"Heading 'X' not found - appended at end of page"** - a document destination's configured section heading was renamed in Notion; the content still landed (end of page). Fix the heading or re-sync.
 - **Work toggle missing** - no ClickUp lists are configured. Add them on the Settings tab (or set `CLICKUP_API_TOKEN` first if that section says it's missing). No lists is the intended off-state for the ClickUp pathway.
 - **Settings says the work_lists table doesn't exist** - your database predates it. Re-run `supabase/schema.sql` in the SQL Editor. Until then the Work pathway falls back to the `CLICKUP_LISTS` env var.
+- **Filing keeps landing in the wrong category** - sharpen that category's description under **Settings → How filing decides**, naming what it's being confused with. Try **Suggest from what is filed here** first. For rules that span categories (nicknames, people, preferences), use Instructions instead.
 - **Cron didn't run** - crons only register on a production deploy, and Vercel sends `Authorization: Bearer CRON_SECRET` - make sure the env var is set in Vercel.
+- **No weekly review appeared** - it only writes on Monday in your timezone, so check **Settings** has the right one. It also skips a week with no captures, and won't write a second page for a week it already covered. To test it now, hit `/api/cron/weekly-synthesis?force=1` with the `Authorization: Bearer <CRON_SECRET>` header.
 
 ## How it works
 
