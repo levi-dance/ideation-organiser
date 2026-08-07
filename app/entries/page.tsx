@@ -17,7 +17,7 @@ const FILTERS: { key: string; label: string }[] = [
   { key: "retracted", label: "Undone" },
 ];
 
-type ChipInfo = { slug: string; name: string };
+type ChipInfo = { slug: string; name: string; icon?: string | null; hue?: string | null };
 
 export default async function EntriesPage({
   searchParams,
@@ -45,7 +45,7 @@ export default async function EntriesPage({
     const [{ data: filings }, { data: clickupActions }] = await Promise.all([
       db
         .from("entry_destinations")
-        .select("entry_id, destination:destinations(category:categories(slug, name))")
+        .select("entry_id, destination:destinations(category:categories(slug, name, icon, hue))")
         .in("entry_id", ids)
         .is("undone_at", null),
       db.from("clickup_actions").select("entry_id, list_id, list_name").in("entry_id", ids),
@@ -112,7 +112,13 @@ export default async function EntriesPage({
                 <p className="line-clamp-2 text-sm">{e.edited_transcript ?? e.raw_transcript}</p>
                 <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
                   {(chips.get(e.id) ?? []).map((c) => (
-                    <CategoryChip key={c.slug} slug={c.slug} name={c.name} />
+                    <CategoryChip
+                      key={c.slug}
+                      slug={c.slug}
+                      name={c.name}
+                      icon={c.icon ?? null}
+                      hue={c.hue ?? null}
+                    />
                   ))}
                   <span style={{ color: "var(--color-ink-muted)" }}>
                     <StatusBadge status={e.status} /> · {relativeTime(e.created_at)}

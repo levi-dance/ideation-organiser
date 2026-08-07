@@ -4,6 +4,9 @@ export type Category = {
   name: string;
   description: string;
   parent_category_id: string | null;
+  /** Chosen appearance; null falls back to the keyword guess in category-style.ts. */
+  icon: string | null;
+  hue: string | null;
   is_seed: boolean;
   is_active: boolean;
   created_by: "system" | "llm" | "user";

@@ -14,6 +14,11 @@ create table categories (
   description text not null,
   parent_category_id uuid references categories(id),
   notion_page_id text, -- the Notion page this category mirrors (for sync)
+  -- Appearance, chosen in Settings. Null means fall back to the keyword guess
+  -- in lib/design/category-style.ts. icon holds a key from its ICON_POOL, never
+  -- a component reference, so an unknown value degrades instead of crashing.
+  icon text,
+  hue text,
   is_seed boolean not null default false,
   is_active boolean not null default true,
   created_by text not null default 'system' check (created_by in ('system','llm','user')),

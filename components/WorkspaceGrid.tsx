@@ -48,7 +48,10 @@ export default async function WorkspaceGrid() {
       <h2 className="text-lg font-semibold tracking-tight">Your workspace</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {dests.map((d) => {
-          const style = categoryStyle(d.category.slug, `${d.category.name} ${d.title}`);
+          const style = categoryStyle(d.category.slug, `${d.category.name} ${d.title}`, {
+            icon: d.category.icon,
+            hue: d.category.hue,
+          });
           const stat = stats.get(d.id);
           // Banks store their database id in notion_page_id (backfilled by sync);
           // fall back to the most recently filed row so the card still opens Notion.

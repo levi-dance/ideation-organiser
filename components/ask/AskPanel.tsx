@@ -14,6 +14,8 @@ type AskSource = {
   destinationTitle: string;
   categoryName: string;
   categorySlug: string;
+  categoryIcon: string | null;
+  categoryHue: string | null;
   createdAt: string;
 };
 
@@ -119,7 +121,12 @@ export default function AskPanel() {
                       [{s.n}]
                     </span>
                     {s.categoryName && (
-                      <CategoryChip slug={s.categorySlug} name={s.categoryName} />
+                      <CategoryChip
+                        slug={s.categorySlug}
+                        name={s.categoryName}
+                        icon={s.categoryIcon}
+                        hue={s.categoryHue}
+                      />
                     )}
                     <span className="font-medium">{s.destinationTitle}</span>
                     {s.createdAt && (

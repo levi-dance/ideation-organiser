@@ -19,7 +19,10 @@ type HydratedFiledRow = {
   id: string;
   notion_page_id: string | null;
   created_at: string;
-  destination: { title: string; category: { name: string; slug: string } | null } | null;
+  destination: {
+    title: string;
+    category: { name: string; slug: string; icon: string | null; hue: string | null } | null;
+  } | null;
 };
 
 export async function POST(request: Request) {
@@ -60,7 +63,7 @@ export async function POST(request: Request) {
 
     const { data: fds } = await db
       .from("entry_destinations")
-      .select("id, notion_page_id, created_at, destination:destinations(title, category:categories(name, slug))")
+      .select("id, notion_page_id, created_at, destination:destinations(title, category:categories(name, slug, icon, hue))")
       .in(
         "id",
         rows.map((r) => r.entry_destination_id)
@@ -80,6 +83,8 @@ export async function POST(request: Request) {
         destinationTitle: fd?.destination?.title ?? "",
         categoryName: fd?.destination?.category?.name ?? "",
         categorySlug: fd?.destination?.category?.slug ?? "",
+        categoryIcon: fd?.destination?.category?.icon ?? null,
+        categoryHue: fd?.destination?.category?.hue ?? null,
         createdAt: fd?.created_at ?? "",
       };
     });

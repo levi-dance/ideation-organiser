@@ -34,6 +34,8 @@ export default async function SettingsPage() {
         id: d.category.id,
         name: d.category.name,
         description: d.category.description,
+        icon: d.category.icon,
+        hue: d.category.hue,
         destinationTitles: [d.title],
       });
   }

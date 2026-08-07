@@ -101,6 +101,8 @@ export default async function EntryDetailPage({
                 <CategoryChip
                   slug={fd.destination.category.slug}
                   name={fd.destination.category.name}
+                  icon={fd.destination.category.icon}
+                  hue={fd.destination.category.hue}
                 />
                 <span className="font-medium">{fd.destination.title}</span>
                 {fd.undone_at && (
